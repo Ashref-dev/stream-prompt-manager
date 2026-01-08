@@ -5,7 +5,7 @@ import EditorOverlay from './components/EditorOverlay';
 import QuickCreator from './components/QuickCreator';
 import { PromptBlockData, ToastMessage, ToastType } from './types';
 import { nanoid } from 'nanoid';
-import { Plus, Check, AlertCircle, Info, PanelRightClose, PanelRightOpen, Waves, LayoutGrid, Search, X, Loader2 } from 'lucide-react';
+import { Plus, Check, AlertCircle, Info, PanelRightClose, PanelRightOpen, Waves, LayoutGrid, Search, X, Loader2, Undo2 } from 'lucide-react';
 import * as db from './services/db';
 import { createPortal } from 'react-dom';
 
@@ -15,13 +15,35 @@ const ToastContainer: React.FC<{ toasts: ToastMessage[]; removeToast: (id: strin
       {toasts.map((toast) => (
         <div 
           key={toast.id}
-          className="pointer-events-auto flex items-center gap-3 px-5 py-3 rounded-full shadow-[0_10px_40px_rgba(0,0,0,0.5)] border border-stone-800 bg-[#161616] text-stone-300 animate-in slide-in-from-bottom-5 fade-in duration-300"
+          className="pointer-events-auto flex items-center gap-6 px-6 py-4 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.7)] border border-stone-800 bg-[#0c0a09] text-stone-300 animate-in slide-in-from-bottom-5 fade-in duration-500 min-w-[320px] justify-between"
         >
-            {/* Icons are colored to pop against the dark grey background */}
-            {toast.type === 'success' && <Check size={14} className="text-emerald-500" />}
-            {toast.type === 'error' && <AlertCircle size={14} className="text-rose-500" />}
-            {toast.type === 'info' && <Info size={14} className="text-sky-500" />}
-            <span className="text-xs font-bold uppercase tracking-widest">{toast.message}</span>
+            <div className="flex items-center gap-4">
+                {/* High grade icons */}
+                <div className={`p-2 rounded-xl ${
+                    toast.type === 'success' ? 'bg-emerald-500/10 text-emerald-500' :
+                    toast.type === 'error' ? 'bg-rose-500/10 text-rose-500' :
+                    'bg-sky-500/10 text-sky-500'
+                }`}>
+                    {toast.type === 'success' && <Check size={18} />}
+                    {toast.type === 'error' && <AlertCircle size={18} />}
+                    {toast.type === 'info' && <Info size={18} />}
+                </div>
+                <span className="text-sm font-medium tracking-tight whitespace-nowrap">{toast.message}</span>
+            </div>
+
+            {toast.actionLabel && toast.onAction && (
+                <button 
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        toast.onAction?.();
+                        removeToast(toast.id);
+                    }}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-lg text-white text-[10px] font-bold uppercase tracking-widest transition-all group"
+                >
+                    <Undo2 size={12} className="group-hover:-rotate-45 transition-transform" />
+                    {toast.actionLabel}
+                </button>
+            )}
         </div>
       ))}
     </div>,
@@ -197,11 +219,12 @@ const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   
   const mainScrollRef = useRef<HTMLDivElement>(null);
+  const pendingDeletions = useRef<Record<string, NodeJS.Timeout>>({});
 
-  const addToast = (message: string, type: ToastType = 'info') => {
+  const addToast = (message: string, type: ToastType = 'info', actionLabel?: string, onAction?: () => void) => {
     const id = nanoid();
-    setToasts(prev => [...prev, { id, message, type }]);
-    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
+    setToasts(prev => [...prev, { id, message, type, actionLabel, onAction }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), actionLabel ? 6000 : 3000);
   };
 
   // Initialize database and load blocks
@@ -250,7 +273,7 @@ const App: React.FC = () => {
     // Save to database
     try {
       await db.createBlock(newBlock);
-      addToast("Stream node saved", 'success');
+      addToast("Note synchronized to database", 'success');
     } catch (error) {
       console.error('Failed to save block:', error);
       addToast("Failed to save to database", 'error');
@@ -295,18 +318,55 @@ const App: React.FC = () => {
   }, []);
 
   const removeBlock = useCallback(async (id: string) => {
-    // Optimistically update UI
-    setBlocks(prev => {
-        const block = prev.find(b => b.id === id);
-        if (block && !block.isTemp) {
-            db.deleteBlock(id).catch(err => {
-                console.error('Failed to delete block:', err);
-                addToast("Failed to delete from database", 'error');
+    // Check if it's a temp block
+    let blockToRestore: PromptBlockData | null = null;
+    
+    // Phase 1: Mark as deleting for animation
+    setBlocks(prev => prev.map(b => b.id === id ? { ...b, isDeleting: true } : b));
+
+    // Phase 2: After animation, handle logic
+    setTimeout(() => {
+        setBlocks(prev => {
+            const block = prev.find(b => b.id === id);
+            if (!block) return prev;
+            
+            if (block.isTemp) {
+                return prev.filter(b => b.id !== id);
+            }
+
+            // It's a real block, handle with Undo
+            blockToRestore = { ...block, isDeleting: false };
+
+            // Start the deletion timer
+            pendingDeletions.current[id] = setTimeout(async () => {
+                try {
+                    await db.deleteBlock(id);
+                    delete pendingDeletions.current[id];
+                } catch (err) {
+                    console.error('Failed to delete block:', err);
+                }
+            }, 6000);
+
+            addToast("Note moved to archives", 'info', 'revert', () => {
+                if (pendingDeletions.current[id]) {
+                    clearTimeout(pendingDeletions.current[id]);
+                    delete pendingDeletions.current[id];
+                    
+                    // Restoring UI
+                    if (blockToRestore) {
+                        setBlocks(current => {
+                            if (current.find(b => b.id === id)) return current;
+                            return [{ ...blockToRestore as PromptBlockData, isNew: true }, ...current];
+                        });
+                        addToast("Note restored successfully", 'success');
+                    }
+                }
             });
-            addToast("Block deleted", 'info');
-        }
-        return prev.filter(b => b.id !== id);
-    });
+
+            return prev.filter(b => b.id !== id);
+        });
+    }, 400); // Wait for the 400ms transition in PromptCard
+
     setMixerIds(prev => prev.filter(mid => mid !== id));
     if (focusedBlockId === id) setFocusedBlockId(null);
   }, [focusedBlockId]);

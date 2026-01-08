@@ -26,18 +26,21 @@ const PromptCard: React.FC<PromptCardProps> = ({ block, isVisible, isMixing, onC
     onToggleMix(block.id);
   };
 
+  // Combine visibility and deleting for the visual state
+  const isActive = isVisible && !block.isDeleting;
+
   return (
     <div 
       className={`
         break-inside-avoid w-full group relative bg-[#161616] border rounded-lg 
-        transition-all duration-300 ease-in-out cursor-pointer flex flex-col gap-3 overflow-hidden
-        ${isVisible 
+        transition-all duration-500 ease-in-out cursor-pointer flex flex-col gap-3 overflow-hidden
+        ${isActive 
             ? 'opacity-100 scale-100 max-h-[800px] p-5 mb-6' 
-            : 'opacity-0 scale-95 max-h-0 p-0 mb-0 border-0 pointer-events-none'
+            : 'opacity-0 scale-90 max-h-0 p-0 mb-0 border-0 pointer-events-none translate-y-4 shadow-none'
         }
         ${isMixing 
             ? 'border-stone-400 ring-1 ring-stone-400 shadow-xl translate-x-1' 
-            : 'border-stone-800 hover:border-stone-600 hover:shadow-lg hover:-translate-y-1'
+            : 'border-stone-800 hover:border-stone-600 hover:shadow-lg hover:-translate-y-1 hover:bg-[#1a1a1a]'
         }
         ${block.isNew && isVisible ? 'animate-flash-border' : ''}
       `}

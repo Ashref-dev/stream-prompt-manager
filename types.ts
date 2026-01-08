@@ -8,6 +8,7 @@ export interface PromptBlockData {
   tags: string[]; // User can add custom tags
   isNew?: boolean; // Used for animation trigger
   isTemp?: boolean; // Ephemeral blocks created directly in the mixer
+  isDeleting?: boolean; // Used for smooth exit animation
 }
 
 export interface Template {
@@ -30,4 +31,6 @@ export interface ToastMessage {
   id: string;
   message: string;
   type: ToastType;
+  actionLabel?: string;
+  onAction?: () => void;
 }

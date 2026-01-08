@@ -61,7 +61,7 @@ const LibraryManager: React.FC<LibraryManagerProps> = ({
   };
 
   const handleDelete = () => {
-    if (selectedIndex !== null && confirm("Delete this preset permanently?")) {
+    if (selectedIndex !== null) {
       onDeleteTemplate(selectedIndex);
       setSelectedIndex(null);
       setEditedTemplate(null);

@@ -88,7 +88,7 @@ const EditorOverlay: React.FC<EditorOverlayProps> = ({ block, onClose, onUpdate,
                 <Copy size={20} />
             </button>
             <button 
-              onClick={() => { if(confirm("Delete this note?")) { onDelete(); handleClose(); }}}
+              onClick={() => { onDelete(); handleClose(); }}
               className="p-2 text-stone-500 hover:text-red-500 transition-colors rounded-lg hover:bg-red-950/20"
               title="Delete"
             >
