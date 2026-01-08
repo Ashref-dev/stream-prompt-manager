@@ -264,11 +264,17 @@ const App: React.FC = () => {
       content: content,
       tags: autoTags, 
       isNew: true,
+      isDeleting: true, // Start hidden for entrance animation
     };
 
     // Optimistically update UI
     setBlocks(prev => [newBlock, ...prev]);
     setIsCreating(false);
+
+    // Trigger entrance expansion
+    setTimeout(() => {
+        setBlocks(prev => prev.map(b => b.id === newBlock.id ? { ...b, isDeleting: false } : b));
+    }, 10);
     
     // Save to database
     try {
@@ -296,10 +302,20 @@ const App: React.FC = () => {
         content: '',
         tags: ['Temp'],
         isTemp: true,
-        isNew: true
+        isNew: true,
+        isDeleting: true // Start hidden
     };
     setBlocks(prev => [newBlock, ...prev]);
     setMixerIds(prev => [...prev, newBlock.id]);
+    
+    setTimeout(() => {
+        setBlocks(prev => prev.map(b => b.id === newBlock.id ? { ...b, isDeleting: false } : b));
+    }, 10);
+
+    setTimeout(() => {
+        setBlocks(prev => prev.map(b => b.id === newBlock.id ? { ...b, isNew: false } : b));
+    }, 2000);
+
     addToast("Stub added to rack", 'info');
   };
 
@@ -354,10 +370,22 @@ const App: React.FC = () => {
                     
                     // Restoring UI
                     if (blockToRestore) {
+                        const restoredBlock = { ...blockToRestore, isNew: true, isDeleting: true };
                         setBlocks(current => {
                             if (current.find(b => b.id === id)) return current;
-                            return [{ ...blockToRestore as PromptBlockData, isNew: true }, ...current];
+                            return [restoredBlock, ...current];
                         });
+
+                        // Trigger smooth entry
+                        setTimeout(() => {
+                            setBlocks(p => p.map(b => b.id === id ? { ...b, isDeleting: false } : b));
+                        }, 10);
+
+                        // Clear flash after 2s
+                        setTimeout(() => {
+                            setBlocks(p => p.map(b => b.id === id ? { ...b, isNew: false } : b));
+                        }, 2000);
+
                         addToast("Note restored successfully", 'success');
                     }
                 }
@@ -365,7 +393,7 @@ const App: React.FC = () => {
 
             return prev.filter(b => b.id !== id);
         });
-    }, 400); // Wait for the 400ms transition in PromptCard
+    }, 400);
 
     setMixerIds(prev => prev.filter(mid => mid !== id));
     if (focusedBlockId === id) setFocusedBlockId(null);
@@ -487,7 +515,7 @@ const App: React.FC = () => {
       }}></div>
 
       {/* LEFT: MAIN STAGE */}
-      <div className={`flex-1 flex flex-col relative z-10 transition-all duration-300 ease-out ${isMixerOpen ? 'lg:mr-[420px]' : ''}`}>
+      <div className={`flex-1 flex flex-col relative z-10 transition-all duration-300 ease-out ${isMixerOpen && columnCount <= 3 ? 'lg:mr-[420px]' : ''}`}>
         
         {/* HEADER */}
         <header className="h-16 flex items-center justify-between px-6 z-20 shrink-0 bg-[#0c0a09]/90 backdrop-blur-md sticky top-0 border-b border-stone-900">
@@ -521,7 +549,7 @@ const App: React.FC = () => {
             
             <button 
                 onClick={() => setIsMixerOpen(!isMixerOpen)}
-                className={`flex items-center gap-3 px-4 py-2 rounded-md border transition-all font-bold text-xs uppercase tracking-wide ${
+                className={`flex items-center gap-3 px-4 py-2 rounded-md border transition-all font-bold text-xs uppercase tracking-wide shrink-0 ${
                     isMixerOpen 
                     ? 'bg-white text-black border-white hover:bg-stone-200' 
                     : 'bg-black text-stone-400 border-stone-800 hover:border-stone-600 hover:text-white'
@@ -587,6 +615,7 @@ const App: React.FC = () => {
         onCreateTemp={handleAddTempBlock}
         onUpdateBlock={updateBlock}
         onDeleteBlock={removeBlock}
+        isOverlay={columnCount > 3}
       />
 
       {/* OVERLAYS */}

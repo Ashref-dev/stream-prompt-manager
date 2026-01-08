@@ -36,11 +36,11 @@ const PromptGrid: React.FC<PromptGridProps> = ({ blocks, visibleBlockIds, mixerI
   const getColumnsClass = (count: number) => {
     switch(count) {
         case 1: return 'sm:columns-1 max-w-3xl'; // Keep single column centered and readable
-        case 2: return 'sm:columns-2'; // Full width
-        case 3: return 'sm:columns-3'; // Full width
-        case 4: return 'sm:columns-4'; // Full width
-        case 5: return 'sm:columns-5'; // Full width
-        default: return 'sm:columns-4';
+        case 2: return 'lg:columns-2'; // Full width
+        case 3: return 'lg:columns-3'; // Full width
+        case 4: return 'xl:columns-4'; // Full width
+        case 5: return '2xl:columns-5'; // Full width
+        default: return 'xl:columns-4';
     }
   };
 

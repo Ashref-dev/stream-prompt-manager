@@ -17,6 +17,7 @@ interface MixerProps {
   onCreateTemp: () => void;
   onUpdateBlock: (id: string, updates: Partial<PromptBlockData>) => void;
   onDeleteBlock: (id: string) => void;
+  isOverlay?: boolean;
 }
 
 interface SortableMixerItemProps {
@@ -138,7 +139,8 @@ const Mixer: React.FC<MixerProps> = ({
     onTriggerToast,
     onCreateTemp,
     onUpdateBlock,
-    onDeleteBlock
+    onDeleteBlock,
+    isOverlay = false
 }) => {
   const [isCompiling, setIsCompiling] = useState(false);
   const [result, setResult] = useState<string | null>(null);
@@ -191,13 +193,23 @@ const Mixer: React.FC<MixerProps> = ({
 
   return (
     <div className={`
-      fixed lg:absolute top-0 right-0 h-full w-[85vw] lg:w-[420px] z-50 shadow-[0_0_80px_rgba(0,0,0,0.9)] lg:shadow-none
-      transform transition-transform duration-300 ease-out bg-[#161616] text-stone-300 flex flex-col font-sans border-l border-stone-800
+      fixed lg:absolute top-0 right-0 h-full w-[85vw] lg:w-[420px] z-50 
+      transform transition-all duration-300 ease-out bg-[#161616] text-stone-300 flex flex-col font-sans border-l border-stone-800
       ${isOpen ? 'translate-x-0' : 'translate-x-full'}
+      ${isOverlay ? 'shadow-[-20px_0_60px_rgba(0,0,0,0.8)]' : 'lg:shadow-none shadow-[0_0_80px_rgba(0,0,0,0.9)]'}
     `}>
       {/* RACK HEADER - Exact Card Grey (#161616) */}
       <div className="h-16 px-6 border-b border-stone-800 flex items-center justify-between shrink-0 bg-[#161616]">
         <div className="flex items-center gap-3">
+          {isOverlay && (
+              <button 
+                onClick={onClose}
+                className="mr-2 p-2 -ml-2 text-white bg-white/10 hover:bg-white/20 rounded-lg transition-all border border-white/10"
+                title="Close Rack"
+              >
+                <X size={18} />
+              </button>
+          )}
           <Server size={18} className={blocks.length > 0 ? "text-white" : "text-stone-700"} />
           <h2 className="text-sm font-bold text-stone-200 uppercase tracking-widest">Rack</h2>
         </div>
