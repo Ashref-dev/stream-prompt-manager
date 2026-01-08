@@ -4,9 +4,9 @@ import Mixer from './components/Mixer';
 import EditorOverlay from './components/EditorOverlay';
 import QuickCreator from './components/QuickCreator';
 import { PromptBlockData, ToastMessage, ToastType } from './types';
-import { SEED_BLOCKS } from './constants';
 import { nanoid } from 'nanoid';
-import { Plus, Check, AlertCircle, Info, PanelRightClose, PanelRightOpen, Waves, LayoutGrid, Search, X } from 'lucide-react';
+import { Plus, Check, AlertCircle, Info, PanelRightClose, PanelRightOpen, Waves, LayoutGrid, Search, X, Loader2 } from 'lucide-react';
+import * as db from './services/db';
 import { createPortal } from 'react-dom';
 
 const ToastContainer: React.FC<{ toasts: ToastMessage[]; removeToast: (id: string) => void }> = ({ toasts, removeToast }) => {
@@ -185,16 +185,8 @@ export const detectTags = (content: string): string[] => {
 };
 
 const App: React.FC = () => {
-  const [blocks, setBlocks] = useState<PromptBlockData[]>(() => {
-    try {
-      const saved = localStorage.getItem('promptstream-blocks');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.length > 0) return parsed;
-      }
-      return SEED_BLOCKS;
-    } catch (e) { return SEED_BLOCKS; }
-  });
+  const [blocks, setBlocks] = useState<PromptBlockData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [mixerIds, setMixerIds] = useState<string[]>([]);
   const [isMixerOpen, setIsMixerOpen] = useState(true); 
@@ -206,9 +198,24 @@ const App: React.FC = () => {
   
   const mainScrollRef = useRef<HTMLDivElement>(null);
 
+  // Initialize database and load blocks
   useEffect(() => {
-    localStorage.setItem('promptstream-blocks', JSON.stringify(blocks));
-  }, [blocks]);
+    const initAndLoad = async () => {
+      try {
+        await db.initDatabase();
+        await db.seedDatabase();
+        const loadedBlocks = await db.getAllBlocks();
+        setBlocks(loadedBlocks);
+        addToast('Connected to database', 'success');
+      } catch (error) {
+        console.error('Database error:', error);
+        addToast('Database connection failed', 'error');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    initAndLoad();
+  }, []);
 
   const addToast = (message: string, type: ToastType = 'info') => {
     const id = nanoid();
@@ -283,7 +290,7 @@ const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [searchQuery]);
 
-  const handleCreateBlock = (content: string) => {
+  const handleCreateBlock = async (content: string) => {
     const firstLine = content.trim().split('\n')[0];
     const smartTitle = firstLine.length > 40 ? firstLine.substring(0, 40) + '...' : firstLine;
     const autoTags = detectTags(content); // Now returns string[]
@@ -297,9 +304,18 @@ const App: React.FC = () => {
       isNew: true,
     };
 
+    // Optimistically update UI
     setBlocks(prev => [newBlock, ...prev]);
-    addToast("Stream node added", 'success');
     setIsCreating(false);
+    
+    // Save to database
+    try {
+      await db.createBlock(newBlock);
+      addToast("Stream node saved", 'success');
+    } catch (error) {
+      console.error('Failed to save block:', error);
+      addToast("Failed to save to database", 'error');
+    }
     
     // Auto Scroll to new content (Top)
     setTimeout(scrollToTop, 100);
@@ -325,14 +341,42 @@ const App: React.FC = () => {
     addToast("Stub added to rack", 'info');
   };
 
-  const updateBlock = (id: string, updates: Partial<PromptBlockData>) => {
+  const updateBlock = async (id: string, updates: Partial<PromptBlockData>) => {
+    // Optimistically update UI
     setBlocks(prev => prev.map(b => b.id === id ? { ...b, ...updates } : b));
+    
+    // Don't save temp blocks to database
+    const block = blocks.find(b => b.id === id);
+    if (block?.isTemp) return;
+    
+    // Save to database
+    try {
+      await db.updateBlock(id, updates);
+    } catch (error) {
+      console.error('Failed to update block:', error);
+      addToast("Failed to save changes", 'error');
+    }
   };
 
-  const removeBlock = (id: string) => {
+  const removeBlock = async (id: string) => {
+    const block = blocks.find(b => b.id === id);
+    
+    // Optimistically update UI
     setBlocks(prev => prev.filter(b => b.id !== id));
     setMixerIds(prev => prev.filter(mid => mid !== id));
     if (focusedBlockId === id) setFocusedBlockId(null);
+    
+    // Don't delete temp blocks from database (they're not there)
+    if (block?.isTemp) return;
+    
+    // Delete from database
+    try {
+      await db.deleteBlock(id);
+      addToast("Block deleted", 'info');
+    } catch (error) {
+      console.error('Failed to delete block:', error);
+      addToast("Failed to delete from database", 'error');
+    }
   };
 
   const toggleMixerItem = (id: string) => {
@@ -368,6 +412,18 @@ const App: React.FC = () => {
              b.content.toLowerCase().includes(q) || 
              b.tags.some(t => t.toLowerCase().includes(q));
   }).map(b => b.id));
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="h-screen w-full bg-[#0c0a09] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 text-white animate-spin" />
+          <p className="text-stone-400 text-sm font-mono">Connecting to database...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative h-screen w-full bg-[#0c0a09] text-stone-200 font-sans overflow-hidden flex selection:bg-white selection:text-black">
