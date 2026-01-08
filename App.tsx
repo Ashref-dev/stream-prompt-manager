@@ -211,10 +211,13 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const [mixerIds, setMixerIds] = useState<string[]>([]);
-  const [isMixerOpen, setIsMixerOpen] = useState(true); 
+  const [isMixerOpen, setIsMixerOpen] = useState(false); 
   const [isCreating, setIsCreating] = useState(false);
   const [focusedBlockId, setFocusedBlockId] = useState<string | null>(null);
-  const [columnCount, setColumnCount] = useState(4);
+  const [columnCount, setColumnCount] = useState(() => {
+    const saved = localStorage.getItem('stream_columnCount');
+    return saved ? parseInt(saved, 10) : 4;
+  });
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -245,6 +248,11 @@ const App: React.FC = () => {
     };
     initAndLoad();
   }, []);
+
+  // Save column count to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('stream_columnCount', columnCount.toString());
+  }, [columnCount]);
 
   const scrollToTop = () => {
     if (mainScrollRef.current) {
