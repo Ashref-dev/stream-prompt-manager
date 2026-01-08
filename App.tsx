@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import PromptGrid from './components/PromptGrid';
 import Mixer from './components/Mixer';
 import EditorOverlay from './components/EditorOverlay';
@@ -198,6 +198,12 @@ const App: React.FC = () => {
   
   const mainScrollRef = useRef<HTMLDivElement>(null);
 
+  const addToast = (message: string, type: ToastType = 'info') => {
+    const id = nanoid();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
+  };
+
   // Initialize database and load blocks
   useEffect(() => {
     const initAndLoad = async () => {
@@ -216,12 +222,6 @@ const App: React.FC = () => {
     };
     initAndLoad();
   }, []);
-
-  const addToast = (message: string, type: ToastType = 'info') => {
-    const id = nanoid();
-    setToasts(prev => [...prev, { id, message, type }]);
-    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
-  };
 
   const scrollToTop = () => {
     if (mainScrollRef.current) {
@@ -244,7 +244,7 @@ const App: React.FC = () => {
 
     window.addEventListener('paste', handleGlobalPaste);
     return () => window.removeEventListener('paste', handleGlobalPaste);
-  }, []);
+  }, [handleCreateBlock]);
 
   // GLOBAL SEARCH HANDLER (Type to search)
   useEffect(() => {
@@ -290,7 +290,7 @@ const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [searchQuery]);
 
-  const handleCreateBlock = async (content: string) => {
+  const handleCreateBlock = useCallback(async (content: string) => {
     const firstLine = content.trim().split('\n')[0];
     const smartTitle = firstLine.length > 40 ? firstLine.substring(0, 40) + '...' : firstLine;
     const autoTags = detectTags(content); // Now returns string[]
@@ -324,7 +324,7 @@ const App: React.FC = () => {
     setTimeout(() => {
       setBlocks(prev => prev.map(b => b.id === newBlock.id ? { ...b, isNew: false } : b));
     }, 2000);
-  };
+  }, []);
 
   const handleAddTempBlock = () => {
     const newBlock: PromptBlockData = {
