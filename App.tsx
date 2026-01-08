@@ -229,6 +229,88 @@ const App: React.FC = () => {
     }
   };
 
+  const handleCreateBlock = useCallback(async (content: string) => {
+    const firstLine = content.trim().split('\n')[0];
+    const smartTitle = firstLine.length > 40 ? firstLine.substring(0, 40) + '...' : firstLine;
+    const autoTags = detectTags(content); // Now returns string[]
+
+    const newBlock: PromptBlockData = {
+      id: nanoid(),
+      type: 'context', 
+      title: smartTitle || 'Stream Node',
+      content: content,
+      tags: autoTags, 
+      isNew: true,
+    };
+
+    // Optimistically update UI
+    setBlocks(prev => [newBlock, ...prev]);
+    setIsCreating(false);
+    
+    // Save to database
+    try {
+      await db.createBlock(newBlock);
+      addToast("Stream node saved", 'success');
+    } catch (error) {
+      console.error('Failed to save block:', error);
+      addToast("Failed to save to database", 'error');
+    }
+    
+    // Auto Scroll to new content (Top)
+    setTimeout(scrollToTop, 100);
+
+    // Turn off 'isNew' flash after animation
+    setTimeout(() => {
+      setBlocks(prev => prev.map(b => b.id === newBlock.id ? { ...b, isNew: false } : b));
+    }, 2000);
+  }, []);
+
+  const handleAddTempBlock = () => {
+    const newBlock: PromptBlockData = {
+        id: nanoid(),
+        type: 'instruction',
+        title: 'Quick Note',
+        content: '',
+        tags: ['Temp'],
+        isTemp: true,
+        isNew: true
+    };
+    setBlocks(prev => [newBlock, ...prev]);
+    setMixerIds(prev => [...prev, newBlock.id]);
+    addToast("Stub added to rack", 'info');
+  };
+
+  const updateBlock = useCallback(async (id: string, updates: Partial<PromptBlockData>) => {
+    // Optimistically update UI
+    setBlocks(prev => {
+        const block = prev.find(b => b.id === id);
+        if (block && !block.isTemp) {
+            db.updateBlock(id, updates).catch(err => {
+                console.error('Failed to update block:', err);
+                addToast("Failed to save changes", 'error');
+            });
+        }
+        return prev.map(b => b.id === id ? { ...b, ...updates } : b);
+    });
+  }, []);
+
+  const removeBlock = useCallback(async (id: string) => {
+    // Optimistically update UI
+    setBlocks(prev => {
+        const block = prev.find(b => b.id === id);
+        if (block && !block.isTemp) {
+            db.deleteBlock(id).catch(err => {
+                console.error('Failed to delete block:', err);
+                addToast("Failed to delete from database", 'error');
+            });
+            addToast("Block deleted", 'info');
+        }
+        return prev.filter(b => b.id !== id);
+    });
+    setMixerIds(prev => prev.filter(mid => mid !== id));
+    if (focusedBlockId === id) setFocusedBlockId(null);
+  }, [focusedBlockId]);
+
   // GLOBAL PASTE HANDLER
   useEffect(() => {
     const handleGlobalPaste = (e: ClipboardEvent) => {
@@ -289,95 +371,6 @@ const App: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [searchQuery]);
-
-  const handleCreateBlock = useCallback(async (content: string) => {
-    const firstLine = content.trim().split('\n')[0];
-    const smartTitle = firstLine.length > 40 ? firstLine.substring(0, 40) + '...' : firstLine;
-    const autoTags = detectTags(content); // Now returns string[]
-
-    const newBlock: PromptBlockData = {
-      id: nanoid(),
-      type: 'context', 
-      title: smartTitle || 'Stream Node',
-      content: content,
-      tags: autoTags, 
-      isNew: true,
-    };
-
-    // Optimistically update UI
-    setBlocks(prev => [newBlock, ...prev]);
-    setIsCreating(false);
-    
-    // Save to database
-    try {
-      await db.createBlock(newBlock);
-      addToast("Stream node saved", 'success');
-    } catch (error) {
-      console.error('Failed to save block:', error);
-      addToast("Failed to save to database", 'error');
-    }
-    
-    // Auto Scroll to new content (Top)
-    setTimeout(scrollToTop, 100);
-
-    // Turn off 'isNew' flash after animation
-    setTimeout(() => {
-      setBlocks(prev => prev.map(b => b.id === newBlock.id ? { ...b, isNew: false } : b));
-    }, 2000);
-  }, []);
-
-  const handleAddTempBlock = () => {
-    const newBlock: PromptBlockData = {
-        id: nanoid(),
-        type: 'instruction',
-        title: 'Quick Note',
-        content: '',
-        tags: ['Temp'],
-        isTemp: true,
-        isNew: true
-    };
-    setBlocks(prev => [newBlock, ...prev]);
-    setMixerIds(prev => [...prev, newBlock.id]);
-    addToast("Stub added to rack", 'info');
-  };
-
-  const updateBlock = async (id: string, updates: Partial<PromptBlockData>) => {
-    // Optimistically update UI
-    setBlocks(prev => prev.map(b => b.id === id ? { ...b, ...updates } : b));
-    
-    // Don't save temp blocks to database
-    const block = blocks.find(b => b.id === id);
-    if (block?.isTemp) return;
-    
-    // Save to database
-    try {
-      await db.updateBlock(id, updates);
-    } catch (error) {
-      console.error('Failed to update block:', error);
-      addToast("Failed to save changes", 'error');
-    }
-  };
-
-  const removeBlock = async (id: string) => {
-    const block = blocks.find(b => b.id === id);
-    
-    // Optimistically update UI
-    setBlocks(prev => prev.filter(b => b.id !== id));
-    setMixerIds(prev => prev.filter(mid => mid !== id));
-    if (focusedBlockId === id) setFocusedBlockId(null);
-    
-    // Don't delete temp blocks from database (they're not there)
-    if (block?.isTemp) return;
-    
-    // Delete from database
-    try {
-      await db.deleteBlock(id);
-      addToast("Block deleted", 'info');
-    } catch (error) {
-      console.error('Failed to delete block:', error);
-      addToast("Failed to delete from database", 'error');
-    }
-  };
 
   const toggleMixerItem = (id: string) => {
     setMixerIds(prev => {
