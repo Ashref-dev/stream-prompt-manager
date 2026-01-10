@@ -1,9 +1,15 @@
 import { neon } from '@neondatabase/serverless';
 import { PromptBlockData } from '../types';
 
-// Direct connection to Neon PostgreSQL
-// This uses Neon's HTTP driver - works directly from the browser!
-const DATABASE_URL = "postgresql://neondb_owner:npg_d8uYbvTp1nGQ@ep-holy-bonus-a90tdbuj-pooler.gwc.azure.neon.tech/neondb?sslmode=require";
+// IMPORTANT: Do NOT hard-code credentials in source. Use environment variables.
+// For local development, add a VITE_NEON_DATABASE_URL entry to your .env (do NOT commit it).
+// NOTE: Embedding DB credentials in client-side code is unsafe — prefer a server-side proxy.
+const DATABASE_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_NEON_DATABASE_URL) || (typeof process !== 'undefined' && process.env.NEON_DATABASE_URL);
+
+if (!DATABASE_URL) {
+  // Fail fast and provide a clear message so the developer knows to set the env var.
+  throw new Error('NEON database URL is not configured. Please set VITE_NEON_DATABASE_URL in your .env or NEON_DATABASE_URL in your environment.');
+}
 
 const sql = neon(DATABASE_URL);
 
