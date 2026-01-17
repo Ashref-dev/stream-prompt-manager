@@ -1,85 +1,241 @@
-import { neon } from '@neondatabase/serverless';
-import { PromptBlockData } from '../types';
+import { createClient } from '@libsql/client';
+import { PromptBlockData, TagColor, Stack } from '../types';
 
 // IMPORTANT: Do NOT hard-code credentials in source. Use environment variables.
-// For local development, add a VITE_NEON_DATABASE_URL entry to your .env (do NOT commit it).
-// NOTE: Embedding DB credentials in client-side code is unsafe — prefer a server-side proxy.
-const DATABASE_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_NEON_DATABASE_URL) || (typeof process !== 'undefined' && process.env.NEON_DATABASE_URL);
+// For local development, add VITE_TURSO_DATABASE_URL and VITE_TURSO_AUTH_TOKEN to your .env (do NOT commit it).
+// NOTE: Embedding DB credentials in client-side code is unsafe — prefer a server-side proxy for production.
+const DATABASE_URL =
+  (typeof import.meta !== 'undefined' &&
+    import.meta.env?.VITE_TURSO_DATABASE_URL) ||
+  '';
+const AUTH_TOKEN =
+  (typeof import.meta !== 'undefined' &&
+    import.meta.env?.VITE_TURSO_AUTH_TOKEN) ||
+  '';
 
 if (!DATABASE_URL) {
-  // Fail fast and provide a clear message so the developer knows to set the env var.
-  throw new Error('NEON database URL is not configured. Please set VITE_NEON_DATABASE_URL in your .env or NEON_DATABASE_URL in your environment.');
+  throw new Error(
+    'Turso database URL is not configured. Please set VITE_TURSO_DATABASE_URL in your .env file.'
+  );
 }
 
-const sql = neon(DATABASE_URL);
+const client = createClient({
+  url: DATABASE_URL,
+  authToken: AUTH_TOKEN,
+});
 
-// Initialize the database table
+// Initialize all database tables
 export async function initDatabase(): Promise<void> {
-  await sql`
+  // Prompt blocks table
+  await client.execute(`
     CREATE TABLE IF NOT EXISTS prompt_blocks (
       id TEXT PRIMARY KEY,
       type TEXT NOT NULL,
       title TEXT NOT NULL,
       content TEXT NOT NULL,
-      tags TEXT[] DEFAULT '{}',
-      created_at TIMESTAMP DEFAULT NOW(),
-      updated_at TIMESTAMP DEFAULT NOW()
+      tags TEXT DEFAULT '[]',
+      stack_id TEXT,
+      stack_order INTEGER,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
     )
-  `;
+  `);
+
+  // Tag colors table
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS tag_colors (
+      name TEXT PRIMARY KEY,
+      hue INTEGER NOT NULL
+    )
+  `);
+
+  // Stacks table
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS stacks (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
 }
 
-// Get all blocks from the database
+// ============ PROMPT BLOCKS ============
+
 export async function getAllBlocks(): Promise<PromptBlockData[]> {
-  const rows = await sql`
-    SELECT id, type, title, content, tags 
-    FROM prompt_blocks 
-    ORDER BY created_at DESC
-  `;
-  
-  return rows.map(row => ({
-    id: row.id,
+  const result = await client.execute(
+    'SELECT id, type, title, content, tags, stack_id, stack_order FROM prompt_blocks ORDER BY created_at DESC'
+  );
+
+  return result.rows.map((row) => ({
+    id: row.id as string,
     type: row.type as PromptBlockData['type'],
-    title: row.title,
-    content: row.content,
-    tags: row.tags || [],
-    isNew: false
+    title: row.title as string,
+    content: row.content as string,
+    tags: JSON.parse((row.tags as string) || '[]'),
+    stackId: row.stack_id as string | undefined,
+    stackOrder: row.stack_order as number | undefined,
+    isNew: false,
   }));
 }
 
-// Create a new block
 export async function createBlock(block: PromptBlockData): Promise<void> {
-  await sql`
-    INSERT INTO prompt_blocks (id, type, title, content, tags)
-    VALUES (${block.id}, ${block.type}, ${block.title}, ${block.content}, ${block.tags})
-  `;
+  await client.execute({
+    sql: 'INSERT INTO prompt_blocks (id, type, title, content, tags, stack_id, stack_order) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    args: [
+      block.id,
+      block.type,
+      block.title,
+      block.content,
+      JSON.stringify(block.tags),
+      block.stackId || null,
+      block.stackOrder || null,
+    ],
+  });
 }
 
-// Update an existing block
-export async function updateBlock(id: string, updates: Partial<PromptBlockData>): Promise<void> {
-  const { type, title, content, tags } = updates;
-  
-  await sql`
-    UPDATE prompt_blocks 
-    SET 
-      type = COALESCE(${type ?? null}, type),
-      title = COALESCE(${title ?? null}, title),
-      content = COALESCE(${content ?? null}, content),
-      tags = COALESCE(${tags ?? null}, tags),
-      updated_at = NOW()
-    WHERE id = ${id}
-  `;
+export async function updateBlock(
+  id: string,
+  updates: Partial<PromptBlockData>
+): Promise<void> {
+  const setClauses: string[] = [];
+  const args: (string | number | null)[] = [];
+
+  if (updates.type !== undefined) {
+    setClauses.push('type = ?');
+    args.push(updates.type);
+  }
+  if (updates.title !== undefined) {
+    setClauses.push('title = ?');
+    args.push(updates.title);
+  }
+  if (updates.content !== undefined) {
+    setClauses.push('content = ?');
+    args.push(updates.content);
+  }
+  if (updates.tags !== undefined) {
+    setClauses.push('tags = ?');
+    args.push(JSON.stringify(updates.tags));
+  }
+  if (updates.stackId !== undefined) {
+    setClauses.push('stack_id = ?');
+    args.push(updates.stackId || null);
+  }
+  if (updates.stackOrder !== undefined) {
+    setClauses.push('stack_order = ?');
+    args.push(updates.stackOrder ?? null);
+  }
+
+  if (setClauses.length === 0) return;
+
+  setClauses.push("updated_at = datetime('now')");
+  args.push(id);
+
+  await client.execute({
+    sql: `UPDATE prompt_blocks SET ${setClauses.join(', ')} WHERE id = ?`,
+    args,
+  });
 }
 
-// Delete a block
 export async function deleteBlock(id: string): Promise<void> {
-  await sql`DELETE FROM prompt_blocks WHERE id = ${id}`;
+  await client.execute({
+    sql: 'DELETE FROM prompt_blocks WHERE id = ?',
+    args: [id],
+  });
 }
 
-// Seed the database with initial blocks (only if empty)
+// ============ TAG COLORS ============
+
+export async function getAllTagColors(): Promise<TagColor[]> {
+  const result = await client.execute('SELECT name, hue FROM tag_colors');
+  return result.rows.map((row) => ({
+    name: row.name as string,
+    hue: row.hue as number,
+  }));
+}
+
+export async function setTagColor(name: string, hue: number): Promise<void> {
+  await client.execute({
+    sql: 'INSERT OR REPLACE INTO tag_colors (name, hue) VALUES (?, ?)',
+    args: [name, hue],
+  });
+}
+
+export async function deleteTagColor(name: string): Promise<void> {
+  await client.execute({
+    sql: 'DELETE FROM tag_colors WHERE name = ?',
+    args: [name],
+  });
+}
+
+// ============ STACKS ============
+
+export async function getAllStacks(): Promise<Stack[]> {
+  const result = await client.execute(
+    'SELECT id, name, created_at FROM stacks ORDER BY created_at ASC'
+  );
+  return result.rows.map((row) => ({
+    id: row.id as string,
+    name: row.name as string,
+    createdAt: new Date(row.created_at as string),
+  }));
+}
+
+export async function createStack(stack: Stack): Promise<void> {
+  await client.execute({
+    sql: 'INSERT INTO stacks (id, name) VALUES (?, ?)',
+    args: [stack.id, stack.name],
+  });
+}
+
+export async function updateStack(id: string, name: string): Promise<void> {
+  await client.execute({
+    sql: 'UPDATE stacks SET name = ? WHERE id = ?',
+    args: [name, id],
+  });
+}
+
+export async function deleteStack(id: string): Promise<void> {
+  // First, remove stack association from all prompts
+  await client.execute({
+    sql: 'UPDATE prompt_blocks SET stack_id = NULL, stack_order = NULL WHERE stack_id = ?',
+    args: [id],
+  });
+  // Then delete the stack
+  await client.execute({
+    sql: 'DELETE FROM stacks WHERE id = ?',
+    args: [id],
+  });
+}
+
+export async function getBlocksByStack(
+  stackId: string
+): Promise<PromptBlockData[]> {
+  const result = await client.execute({
+    sql: 'SELECT id, type, title, content, tags, stack_id, stack_order FROM prompt_blocks WHERE stack_id = ? ORDER BY stack_order ASC',
+    args: [stackId],
+  });
+
+  return result.rows.map((row) => ({
+    id: row.id as string,
+    type: row.type as PromptBlockData['type'],
+    title: row.title as string,
+    content: row.content as string,
+    tags: JSON.parse((row.tags as string) || '[]'),
+    stackId: row.stack_id as string | undefined,
+    stackOrder: row.stack_order as number | undefined,
+    isNew: false,
+  }));
+}
+
+// ============ SEEDING ============
+
 export async function seedDatabase(): Promise<boolean> {
-  const count = await sql`SELECT COUNT(*) as count FROM prompt_blocks`;
-  
-  if (parseInt(count[0].count) > 0) {
+  const result = await client.execute(
+    'SELECT COUNT(*) as count FROM prompt_blocks'
+  );
+  const count = result.rows[0].count as number;
+
+  if (count > 0) {
     return false; // Already has data
   }
 
@@ -88,25 +244,28 @@ export async function seedDatabase(): Promise<boolean> {
       id: 'seed-1',
       type: 'persona',
       title: 'Senior React Architect',
-      content: 'Act as a Senior Software Architect specializing in React, TypeScript, and Scalable Front-end Systems. You prioritize clean architecture, performance optimization, and maintainability.',
+      content:
+        'Act as a Senior Software Architect specializing in React, TypeScript, and Scalable Front-end Systems. You prioritize clean architecture, performance optimization, and maintainability.',
       tags: ['Role', 'React', 'TypeScript'],
-      isNew: false
+      isNew: false,
     },
     {
       id: 'seed-2',
       type: 'context',
       title: 'Modern Stack Context',
-      content: 'The project uses Next.js 14 (App Router), Tailwind CSS for styling, and Zustand for state management. Strictly adhere to modern React patterns (Server Components where applicable).',
+      content:
+        'The project uses Next.js 14 (App Router), Tailwind CSS for styling, and Zustand for state management. Strictly adhere to modern React patterns (Server Components where applicable).',
       tags: ['Context', 'React', 'Next.js'],
-      isNew: false
+      isNew: false,
     },
     {
       id: 'seed-3',
       type: 'format',
       title: 'Markdown Output',
-      content: 'Provide the response in clean Markdown. Use standard code blocks for all examples. Briefly explain the "Why" before showing the "How".',
+      content:
+        'Provide the response in clean Markdown. Use standard code blocks for all examples. Briefly explain the "Why" before showing the "How".',
       tags: ['Output'],
-      isNew: false
+      isNew: false,
     },
     {
       id: 'seed-4',
@@ -119,7 +278,7 @@ export async function seedDatabase(): Promise<boolean> {
 4. Edge cases and error handling
 5. Test coverage suggestions`,
       tags: ['Logic', 'Code'],
-      isNew: false
+      isNew: false,
     },
     {
       id: 'seed-5',
@@ -131,21 +290,22 @@ export async function seedDatabase(): Promise<boolean> {
 - Descriptive variable names
 - Avoid nested callbacks - use async/await`,
       tags: ['Rules', 'Code'],
-      isNew: false
+      isNew: false,
     },
     {
       id: 'seed-6',
       type: 'persona',
       title: 'Python Data Scientist',
-      content: 'You are an experienced Data Scientist with expertise in Python, Pandas, NumPy, and machine learning frameworks like TensorFlow and PyTorch. Focus on efficient data processing and clear visualizations.',
+      content:
+        'You are an experienced Data Scientist with expertise in Python, Pandas, NumPy, and machine learning frameworks like TensorFlow and PyTorch. Focus on efficient data processing and clear visualizations.',
       tags: ['Role', 'Python'],
-      isNew: false
-    }
+      isNew: false,
+    },
   ];
 
   for (const block of seedBlocks) {
     await createBlock(block);
   }
 
-  return true; // Seeded successfully
+  return true;
 }

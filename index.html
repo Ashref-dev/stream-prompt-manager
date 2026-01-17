@@ -4,35 +4,59 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PromptStream</title>
-    <meta name="description" content="A professional prompt engineering studio with persistent storage and live AI compilation." />
-    
+    <meta
+      name="description"
+      content="A professional prompt engineering studio with persistent storage and live AI compilation."
+    />
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <!-- omitted hard-coded og:url so platforms use the actual shared URL -->
     <meta property="og:site_name" content="PromptStream" />
-    <meta property="og:title" content="PromptStream — Architecture for Intelligence" />
-    <meta property="og:description" content="Organize context, simulate outputs, and curate prompt modules in a sleek, technical environment." />
+    <meta
+      property="og:title"
+      content="PromptStream — Architecture for Intelligence"
+    />
+    <meta
+      property="og:description"
+      content="Organize context, simulate outputs, and curate prompt modules in a sleek, technical environment."
+    />
     <meta property="og:image" content="/og-image.png" />
     <meta property="og:image" content="/og-image.webp" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="PromptStream — Architecture for Intelligence" />
+    <meta
+      property="og:image:alt"
+      content="PromptStream — Architecture for Intelligence"
+    />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <!-- No fixed twitter:url (use item url or deployed domain) -->
-    <meta name="twitter:title" content="PromptStream — Architecture for Intelligence" />
-    <meta name="twitter:description" content="Organize context, simulate outputs, and curate prompt modules in a sleek, technical environment." />
+    <meta
+      name="twitter:title"
+      content="PromptStream — Architecture for Intelligence"
+    />
+    <meta
+      name="twitter:description"
+      content="Organize context, simulate outputs, and curate prompt modules in a sleek, technical environment."
+    />
     <meta name="twitter:image" content="/og-image.png" />
-    <meta name="twitter:image:alt" content="PromptStream — Architecture for Intelligence" />
+    <meta
+      name="twitter:image:alt"
+      content="PromptStream — Architecture for Intelligence"
+    />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="shortcut icon" href="/favicon.svg" />
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
     <script>
       tailwind.config = {
         theme: {
@@ -55,20 +79,23 @@
                 800: '#292524',
                 900: '#1c1917',
                 950: '#0c0a09',
-              }
+              },
             },
             animation: {
               'flash-border': 'flashBorder 2s ease-out forwards',
             },
             keyframes: {
               flashBorder: {
-                '0%': { borderColor: '#fff', boxShadow: '0 0 20px rgba(255,255,255,0.3)' },
+                '0%': {
+                  borderColor: '#fff',
+                  boxShadow: '0 0 20px rgba(255,255,255,0.3)',
+                },
                 '100%': { borderColor: '#292524', boxShadow: 'none' },
-              }
-            }
-          }
-        }
-      }
+              },
+            },
+          },
+        },
+      };
     </script>
     <style>
       body {
@@ -81,38 +108,38 @@
         height: 6px;
       }
       ::-webkit-scrollbar-track {
-        background: #1c1917; 
+        background: #1c1917;
       }
       ::-webkit-scrollbar-thumb {
-        background: #44403c; 
+        background: #44403c;
         border-radius: 3px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #57534e; 
+        background: #57534e;
       }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "gsap": "https://esm.sh/gsap@^3.14.2",
-    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
-    "@dnd-kit/sortable": "https://esm.sh/@dnd-kit/sortable@^10.0.0",
-    "@dnd-kit/utilities": "https://esm.sh/@dnd-kit/utilities@^3.2.2",
-    "@dnd-kit/core": "https://esm.sh/@dnd-kit/core@^6.3.1",
-    "nanoid": "https://esm.sh/nanoid@^5.1.6",
-    "react-dom": "https://esm.sh/react-dom@^19.2.3",
-    "@neondatabase/serverless": "https://esm.sh/@neondatabase/serverless@1.0.2"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
-</head>
+    <script type="importmap">
+      {
+        "imports": {
+          "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+          "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+          "react/": "https://esm.sh/react@^19.2.3/",
+          "react": "https://esm.sh/react@^19.2.3",
+          "gsap": "https://esm.sh/gsap@^3.14.2",
+          "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+          "@dnd-kit/sortable": "https://esm.sh/@dnd-kit/sortable@^10.0.0",
+          "@dnd-kit/utilities": "https://esm.sh/@dnd-kit/utilities@^3.2.2",
+          "@dnd-kit/core": "https://esm.sh/@dnd-kit/core@^6.3.1",
+          "nanoid": "https://esm.sh/nanoid@^5.1.6",
+          "react-dom": "https://esm.sh/react-dom@^19.2.3",
+          "@libsql/client": "https://esm.sh/@libsql/client@0.14.0/web"
+        }
+      }
+    </script>
+    <link rel="stylesheet" href="/index.css" />
+  </head>
   <body>
     <div id="root"></div>
-  <script type="module" src="/index.tsx"></script>
-</body>
+    <script type="module" src="/index.tsx"></script>
+  </body>
 </html>
