@@ -1,212 +1,124 @@
 # Stream Prompts
 
-A professional prompt engineering studio with persistent cloud storage, intelligent tag management, and organizational stacks. Built with React, TypeScript, and Turso.
+A professional prompt engineering studio with persistent cloud storage, intelligent tag management, and organizational stacks. Built with React, TypeScript, FastAPI, and Turso.
 
 ![Stream Prompts Interface](./screenshot.png)
 
+## Architecture
+
+The project is split into two distinct parts:
+
+- **`frontend/`**: React application built with Vite
+- **`backend/`**: REST API built with FastAPI and Python 3.13
+
 ## Features
 
-### 🎯 Smart Prompt Management
-- **Auto-tagging**: Automatically detects and tags prompts based on content (Python, React, TypeScript, etc.)
-- **Custom Tags**: Add your own tags with unique color coding
-- **Rich Editor**: Full-screen editor with live character count and tag management
+- **Smart Prompt Management**: Auto-tagging, custom tags, rich editor
+- **Stacks**: Organize prompts into collections
+- **Mixer**: Composes multiple prompts into one stream
+- **Tag Colors**: Custom hue assignment for tags
+- **FastAPI Backend**: Robust Python backend with type safety
+- **Turso Database**: Edge-replicated SQLite
 
-### 🎨 Advanced Tag System
-- **Color Customization**: Assign unique hues to tags using the golden angle algorithm for maximum visual separation
-- **Tag Filtering**: Multi-select tag filtering with a sleek horizontal bar
-- **Built-in Categories**: Pre-configured colors for Role, Context, Logic, Code, Rules, and Output tags
+## Prerequisites
 
-### 📚 Stacks (Collections)
-- **Organize Prompts**: Group related prompts into named stacks (e.g., "Landing Page Flow")
-- **Ordered Lists**: Assign order numbers to prompts within stacks
-- **Quick Navigation**: Switch between stacks with tabs or view all prompts at once
-
-### 🔍 Powerful Search
-- **Type-to-Search**: Start typing anywhere to instantly filter prompts
-- **Multi-criteria**: Search across titles, content, and tags simultaneously
-- **Keyboard-first**: Press Escape to clear, Backspace to edit
-
-### 💾 Cloud Persistence
-- **Turso Database**: Serverless SQLite database with global edge replication
-- **Real-time Sync**: All changes automatically saved to the cloud
-- **Offline-ready**: Works seamlessly with local caching
-
-### 🎛️ Mixer (Rack)
-- **Drag & Drop**: Reorder prompts in your composition
-- **Live Preview**: See your combined prompt in real-time
-- **One-click Copy**: Copy the entire mixed prompt to clipboard
-- **Temp Stubs**: Create temporary notes that don't persist
-
-## Tech Stack
-
-- **Frontend**: React 19 + TypeScript
-- **Database**: Turso (LibSQL)
-- **Styling**: Tailwind CSS
-- **Build Tool**: Vite
-- **Runtime**: Bun
-- **Animations**: GSAP
-- **Drag & Drop**: dnd-kit
+- **Frontend**: [Bun](https://bun.sh) (v1.0+)
+- **Backend**: Python 3.13+, [uv](https://github.com/astral-sh/uv) package manager
+- **Database**: [Turso](https://turso.tech) account
 
 ## Getting Started
 
-### Prerequisites
+### 1. Setup Backend
 
-- [Bun](https://bun.sh) (v1.0+)
-- A [Turso](https://turso.tech) account and database
+Navigate to the backend directory and install dependencies:
 
-### Installation
+```bash
+cd backend
+uv sync
+```
 
-1. **Clone the repository**
-   ```bash
-   git clone <your-repo-url>
-   cd stream-prompts
-   ```
+Create a `.env` file in `backend/` based on `.env.example`:
 
-2. **Install dependencies**
-   ```bash
-   bun install
-   ```
+```env
+TURSO_DATABASE_URL=libsql://your-database.turso.io
+TURSO_AUTH_TOKEN=your-auth-token
+CORS_ORIGINS=http://localhost:3000
+```
 
-3. **Set up environment variables**
-   
-   Create a `.env` file in the root directory:
-   ```env
-   VITE_TURSO_DATABASE_URL=libsql://your-database.turso.io
-   VITE_TURSO_AUTH_TOKEN=your-auth-token-here
-   GEMINI_API_KEY=your-gemini-api-key (optional)
-   ```
+Start the backend server:
 
-4. **Build the application**
-   ```bash
-   bun run build
-   ```
+```bash
+uv run uvicorn app.main:app --reload --port 8000
+```
 
-5. **Preview the production build**
-   ```bash
-   bun run preview
-   ```
+The API will be available at `http://localhost:8000`. API Docs at `http://localhost:8000/docs`.
 
-   The app will be available at `http://localhost:4173`
+### 2. Setup Frontend
 
-### Development
+Navigate to the frontend directory:
 
-For local development with hot reload:
+```bash
+cd frontend
+bun install
+```
+
+Create a `.env` file in `frontend/` based on `.env.example`:
+
+```env
+VITE_API_URL=http://localhost:8000/api
+```
+
+Start the development server:
+
 ```bash
 bun run dev
 ```
 
-## Usage
+The app will be available at `http://localhost:3000`.
 
-### Creating Prompts
+## Deployment
 
-1. **Quick Create**: Click the "New Node" button or paste text anywhere (Cmd+V)
-2. **Auto-tagging**: Tags are automatically detected based on content
-3. **Manual Tags**: Add custom tags in the editor overlay
+### Backend (Vercel)
 
-### Organizing with Stacks
+The backend is configured for Vercel deployment.
 
-1. Click "New Stack" in the stacks bar
-2. Name your stack (e.g., "API Development")
-3. Open a prompt's editor and assign it to the stack
-4. Set an order number for sequential prompts
+1. Install Vercel CLI: `npm i -g vercel`
+2. Run `vercel deploy` from the root (or `backend/` directory)
+3. Set environment variables in Vercel project settings:
+   - `TURSO_DATABASE_URL`
+   - `TURSO_AUTH_TOKEN`
+   - `CORS_ORIGINS` (Your frontend URL)
 
-### Filtering & Search
+### Frontend (Static/Vercel/Netlify)
 
-- **Tag Filter**: Click tags in the filter bar to show only matching prompts
-- **Search**: Type anywhere to search (no input field needed!)
-- **Clear**: Press Escape or click the clear button
-
-### Customizing Tag Colors
-
-1. Click the Settings gear icon in the header
-2. Select a tag to customize
-3. Adjust the hue slider to your preferred color
-4. Changes are saved automatically
-
-### Using the Mixer
-
-1. Click "Open Rack" to show the mixer sidebar
-2. Click the merge icon on any prompt card to add it to the rack
-3. Drag to reorder prompts in the rack
-4. Click "Copy All" to copy the combined prompt
+1. Build the frontend:
+   ```bash
+   cd frontend
+   bun run build
+   ```
+2. Deploy the `dist/` folder to any static host.
+3. Ensure `VITE_API_URL` is set in your build environment to point to your deployed backend.
 
 ## Project Structure
 
 ```
 stream-prompts/
-├── components/          # React components
-│   ├── EditorOverlay.tsx
-│   ├── Mixer.tsx
-│   ├── PromptCard.tsx
-│   ├── PromptGrid.tsx
-│   ├── QuickCreator.tsx
-│   ├── SettingsOverlay.tsx
-│   ├── StacksBar.tsx
-│   └── TagFilterBar.tsx
-├── services/            # Database and API services
-│   ├── db.ts           # Turso database client
-│   └── geminiService.ts
-├── App.tsx             # Main application component
-├── types.ts            # TypeScript type definitions
-├── constants.tsx       # App constants and utilities
-└── index.html          # Entry point
+├── backend/             # FastAPI Application
+│   ├── app/            # Source code
+│   │   ├── routes/     # API Endpoints
+│   │   ├── database.py # Turso connection
+│   │   ├── models.py   # Pydantic models
+│   │   └── main.py     # Entry point
+│   ├── pyproject.toml  # Python dependencies
+│   └── README.md
+├── frontend/            # React Application
+│   ├── src/            # Source code
+│   ├── public/         # Static assets
+│   ├── index.html
+│   └── package.json
+└── README.md           # This file
 ```
-
-## Database Schema
-
-### `prompt_blocks`
-- `id` (TEXT, PRIMARY KEY)
-- `type` (TEXT): persona, context, constraint, format, instruction, example
-- `title` (TEXT)
-- `content` (TEXT)
-- `tags` (TEXT): JSON array of tag names
-- `stack_id` (TEXT, nullable)
-- `stack_order` (INTEGER, nullable)
-- `created_at` (TEXT)
-- `updated_at` (TEXT)
-
-### `tag_colors`
-- `name` (TEXT, PRIMARY KEY)
-- `hue` (INTEGER): 0-360 degree hue value
-
-### `stacks`
-- `id` (TEXT, PRIMARY KEY)
-- `name` (TEXT)
-- `created_at` (TEXT)
-
-## Keyboard Shortcuts
-
-- **Cmd/Ctrl + V**: Paste to create new prompt (when not in input)
-- **Type anywhere**: Activate search
-- **Escape**: Clear search
-- **Backspace**: Edit search query
-- **Enter**: Submit in modals
-
-## Deployment
-
-### Vercel (Recommended)
-
-1. Push your code to GitHub
-2. Import the project in Vercel
-3. Add environment variables in Vercel dashboard:
-   - `VITE_TURSO_DATABASE_URL`
-   - `VITE_TURSO_AUTH_TOKEN`
-4. Deploy!
-
-### Other Platforms
-
-The built files are in the `dist/` directory after running `bun run build`. Deploy these static files to any hosting service (Netlify, Cloudflare Pages, etc.).
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-MIT License - feel free to use this project for personal or commercial purposes.
-
-## Acknowledgments
-
-- Built with [Turso](https://turso.tech) for edge database hosting
-- UI inspired by modern prompt engineering workflows
-- Color system based on the golden angle for optimal visual separation
+MIT License

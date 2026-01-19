@@ -35,7 +35,6 @@ import {
   Undo2,
   Settings,
 } from 'lucide-react';
-import * as db from './services/db';
 import { createPortal } from 'react-dom';
 import { generateUniqueHue } from './constants';
 
@@ -273,28 +272,26 @@ const App: React.FC = () => {
   };
 
   // Initialize database and load all data
+  // Load all data from API
   useEffect(() => {
-    const initAndLoad = async () => {
+    const loadData = async () => {
       try {
-        await db.initDatabase();
-        await db.seedDatabase();
-
         const [loadedBlocks, loadedTagColors, loadedStacks] = await Promise.all(
-          [db.getAllBlocks(), db.getAllTagColors(), db.getAllStacks()]
+          [api.getAllBlocks(), api.getAllTagColors(), api.getAllStacks()]
         );
 
         setBlocks(loadedBlocks);
         setTagColors(loadedTagColors);
         setStacks(loadedStacks);
-        addToast('Connected to database', 'success');
+        addToast('Connected to API', 'success');
       } catch (error) {
-        console.error('Database error:', error);
-        addToast('Database connection failed', 'error');
+        console.error('API error:', error);
+        addToast('API connection failed', 'error');
       } finally {
         setIsLoading(false);
       }
     };
-    initAndLoad();
+    loadData();
   }, []);
 
   // Save column count to localStorage
@@ -330,14 +327,14 @@ const App: React.FC = () => {
         }
         return [...prev, { name, hue }];
       });
-      await db.setTagColor(name, hue);
+      await api.setTagColor(name, hue);
     },
     []
   );
 
   const handleResetTagColor = useCallback(async (name: string) => {
     setTagColors((prev) => prev.filter((tc) => tc.name !== name));
-    await db.deleteTagColor(name);
+    await api.deleteTagColor(name);
   }, []);
 
   // Stack handlers
@@ -348,7 +345,7 @@ const App: React.FC = () => {
       createdAt: new Date(),
     };
     setStacks((prev) => [...prev, newStack]);
-    await db.createStack(newStack);
+    await api.createStack(newStack);
     addToast(`Stack "${name}" created`, 'success');
   }, []);
 
@@ -365,7 +362,7 @@ const App: React.FC = () => {
         )
       );
       if (activeStackId === stackId) setActiveStackId(null);
-      await db.deleteStack(stackId);
+      await api.deleteStack(stackId);
       if (stack) addToast(`Stack "${stack.name}" deleted`, 'info');
     },
     [stacks, activeStackId]
@@ -376,7 +373,7 @@ const App: React.FC = () => {
       setStacks((prev) =>
         prev.map((s) => (s.id === stackId ? { ...s, name } : s))
       );
-      await db.updateStack(stackId, name);
+      await api.updateStack(stackId, name);
     },
     []
   );
@@ -453,7 +450,7 @@ const App: React.FC = () => {
       }, 10);
 
       try {
-        await db.createBlock(newBlock);
+        await api.createBlock(newBlock);
         addToast('Note synchronized to database', 'success');
       } catch (error) {
         console.error('Failed to save block:', error);
@@ -506,7 +503,7 @@ const App: React.FC = () => {
       setBlocks((prev) => {
         const block = prev.find((b) => b.id === id);
         if (block && !block.isTemp) {
-          db.updateBlock(id, updates).catch((err) => {
+          api.updateBlock(id, updates).catch((err) => {
             console.error('Failed to update block:', err);
             addToast('Failed to save changes', 'error');
           });
@@ -538,7 +535,7 @@ const App: React.FC = () => {
 
           pendingDeletions.current[id] = setTimeout(async () => {
             try {
-              await db.deleteBlock(id);
+              await api.deleteBlock(id);
               delete pendingDeletions.current[id];
             } catch (err) {
               console.error('Failed to delete block:', err);
