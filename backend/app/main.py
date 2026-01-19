@@ -4,9 +4,13 @@ Stream Prompts API - Main FastAPI Application
 
 import os
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from .database import init_database, seed_database
 from .routes import router as blocks_router
@@ -16,6 +20,8 @@ from .models import HealthResponse
 
 load_dotenv()
 
+# Rate Limiter Setup
+limiter = Limiter(key_func=get_remote_address, default_limits=["100/minute"])
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -31,6 +37,11 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+# State for Limiter
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 # CORS configuration
 cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")

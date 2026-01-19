@@ -2,40 +2,45 @@
 API routes for tag colors
 """
 
-from fastapi import APIRouter
-from ..database import get_client
-from ..models import TagColor, TagColorCreate
+from fastapi import APIRouter, Depends, status
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, delete
+from sqlalchemy.dialects.postgresql import insert
+from ..database import get_db
+from ..models import TagColor, TagColorCreate, TagColorModel
 
 router = APIRouter(prefix="/tag-colors", tags=["tag-colors"])
 
 
 @router.get("", response_model=list[TagColor])
-async def get_all_tag_colors():
+async def get_all_tag_colors(db: AsyncSession = Depends(get_db)):
     """Get all tag colors."""
-    client = get_client()
-    result = await client.execute("SELECT name, hue FROM tag_colors", [])
-
-    colors = []
-    for row in result.get("rows", []):
-        colors.append(TagColor(name=row[0], hue=row[1]))
+    query = select(TagColorModel)
+    result = await db.execute(query)
+    colors = result.scalars().all()
     return colors
 
 
 @router.put("/{tag_name}", response_model=TagColor)
-async def set_tag_color(tag_name: str, color: TagColorCreate):
+async def set_tag_color(
+    tag_name: str, color: TagColorCreate, db: AsyncSession = Depends(get_db)
+):
     """Set or update a tag color."""
-    client = get_client()
-    await client.execute(
-        "INSERT OR REPLACE INTO tag_colors (name, hue) VALUES (?, ?)",
-        [tag_name, color.hue],
+    # Postgres upsert
+    stmt = insert(TagColorModel).values(name=tag_name, hue=color.hue)
+    stmt = stmt.on_conflict_do_update(
+        index_elements=["name"], set_={"hue": stmt.excluded.hue}
     )
+    
+    await db.execute(stmt)
+    await db.commit()
 
     return TagColor(name=tag_name, hue=color.hue)
 
 
-@router.delete("/{tag_name}", status_code=204)
-async def delete_tag_color(tag_name: str):
+@router.delete("/{tag_name}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_tag_color(tag_name: str, db: AsyncSession = Depends(get_db)):
     """Delete a custom tag color."""
-    client = get_client()
-    await client.execute("DELETE FROM tag_colors WHERE name = ?", [tag_name])
+    await db.execute(delete(TagColorModel).where(TagColorModel.name == tag_name))
+    await db.commit()
     return None

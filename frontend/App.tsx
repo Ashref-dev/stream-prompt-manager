@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { generateUniqueHue } from './constants';
+import * as api from "./services/api";
 
 const ToastContainer: React.FC<{
   toasts: ToastMessage[];
