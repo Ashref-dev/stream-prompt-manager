@@ -34,12 +34,12 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
       gsap.fromTo(
         backdropRef.current,
         { opacity: 0 },
-        { opacity: 1, duration: 0.2 }
+        { opacity: 1, duration: 0.2 },
       );
       gsap.fromTo(
         containerRef.current,
         { scale: 0.95, opacity: 0, y: 10 },
-        { scale: 1, opacity: 1, y: 0, duration: 0.3, ease: 'power3.out' }
+        { scale: 1, opacity: 1, y: 0, duration: 0.3, ease: 'power3.out' },
       );
     }
   }, [isOpen]);
@@ -56,11 +56,8 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
 
   if (!isOpen) return null;
 
-  // Get color map for quick lookup
   const colorMap = new Map(tagColors.map((tc) => [tc.name, tc.hue]));
-
-  // Get existing hues for generating new unique ones
-  const existingHues = tagColors.map((tc) => tc.hue);
+  const existingHues = tagColors.map((tc) => tc.hue as number);
 
   const getTagHue = (tagName: string): number | null => {
     return colorMap.get(tagName) ?? null;
@@ -80,159 +77,215 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
 
       <div
         ref={containerRef}
-        className='relative w-full max-w-lg bg-[#111] rounded-xl overflow-hidden flex flex-col shadow-2xl border border-stone-800 max-h-[80vh]'
+        className='relative w-full max-w-2xl bg-[#111] rounded-2xl overflow-hidden flex flex-col shadow-2xl border border-stone-800 h-[80vh]'
       >
         {/* HEADER */}
-        <div className='flex items-center justify-between px-6 py-4 border-b border-stone-800 bg-[#161616] shrink-0'>
-          <div className='flex items-center gap-3'>
-            <Palette size={20} className='text-stone-400' />
-            <h2 className='text-lg font-bold text-white'>Tag Colors</h2>
+        <div className='flex items-center justify-between px-8 py-6 border-b border-stone-800 bg-[#161616] shrink-0'>
+          <div className='flex items-center gap-4'>
+            <div className='p-2 bg-stone-800 rounded-lg text-white'>
+              <Palette size={24} />
+            </div>
+            <div>
+              <h2 className='text-xl font-bold text-white uppercase tracking-tight'>
+                Tag Architecture
+              </h2>
+              <p className='text-xs text-stone-500 font-medium'>
+                Customize the visual identity of your flow.
+              </p>
+            </div>
           </div>
           <button
             onClick={handleClose}
-            className='p-2 text-stone-900 bg-stone-200 hover:bg-white rounded-lg transition-colors'
+            className='p-2 text-stone-900 bg-stone-200 hover:bg-white rounded-lg transition-all hover:scale-105'
           >
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
 
         {/* CONTENT */}
-        <div className='flex-1 overflow-y-auto p-6 custom-scrollbar'>
-          <p className='text-sm text-stone-500 mb-6'>
-            Click on a tag to customize its color. Built-in tags use predefined
-            colors but can be overridden.
-          </p>
-
-          {allTags.length === 0 ? (
-            <p className='text-stone-600 text-center py-8'>
-              No tags found yet. Create prompts with tags to customize them
-              here.
-            </p>
-          ) : (
-            <div className='space-y-2'>
+        <div className='flex-1 flex overflow-hidden'>
+          {/* TAG LIST GRID */}
+          <div className='flex-1 overflow-y-auto p-6 custom-scrollbar bg-[#0c0a09]'>
+            <div className='grid grid-cols-2 gap-3 pb-8'>
               {allTags.map((tag) => {
                 const customHue = getTagHue(tag);
                 const hasCustomColor = customHue !== null;
-                const isBuiltIn = isBuiltInTag(tag);
                 const isSelected = selectedTag === tag;
-
-                // Determine display classes
                 const displayClasses = hasCustomColor
                   ? hueToColorClasses(customHue)
                   : CATEGORY_COLORS[tag] || CATEGORY_COLORS['All'];
 
                 return (
-                  <div key={tag} className='space-y-2'>
+                  <button
+                    key={tag}
+                    onClick={() => setSelectedTag(tag)}
+                    className={`
+                                    flex items-center gap-3 p-3 rounded-xl border transition-all relative group
+                                    ${
+                                      isSelected
+                                        ? 'bg-[#1a1a1a] border-white/20 shadow-xl ring-1 ring-white/10 scale-[1.02]'
+                                        : 'bg-[#111] border-stone-800 hover:border-stone-600'
+                                    }
+                                `}
+                  >
                     <div
-                      className={`
-                        flex items-center justify-between p-3 rounded-lg border transition-all cursor-pointer
-                        ${
-                          isSelected
-                            ? 'bg-stone-800 border-stone-600'
-                            : 'bg-stone-900 border-stone-800 hover:border-stone-700'
-                        }
-                      `}
-                      onClick={() => setSelectedTag(isSelected ? null : tag)}
+                      className={`w-10 h-10 rounded-lg border flex items-center justify-center shrink-0 ${displayClasses}`}
                     >
-                      <div className='flex items-center gap-3'>
-                        {/* Color Preview */}
-                        <div
-                          className={`w-8 h-8 rounded-lg border ${displayClasses}`}
-                        />
-                        <div>
-                          <span className='text-sm font-semibold text-white'>
-                            {tag}
-                          </span>
-                          <div className='flex items-center gap-2 mt-0.5'>
-                            {isBuiltIn && (
-                              <span className='text-[9px] uppercase tracking-wider text-stone-600 font-bold'>
-                                Built-in
-                              </span>
-                            )}
-                            {hasCustomColor && (
-                              <span className='text-[9px] uppercase tracking-wider text-emerald-600 font-bold'>
-                                Custom
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Reset Button */}
-                      {hasCustomColor && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onResetTagColor(tag);
-                          }}
-                          className='p-2 text-stone-500 hover:text-white hover:bg-stone-700 rounded-lg transition-colors'
-                          title='Reset to default'
-                        >
-                          <RotateCcw size={14} />
-                        </button>
-                      )}
+                      <span className='text-[10px] font-bold'>
+                        {tag.substring(0, 2).toUpperCase()}
+                      </span>
                     </div>
-
-                    {/* Hue Slider (Expanded) */}
-                    {isSelected && (
-                      <div className='pl-4 pr-2 py-3 bg-stone-900/50 rounded-lg border border-stone-800 animate-in slide-in-from-top-1 fade-in duration-200'>
-                        <div className='flex items-center gap-4'>
-                          <span className='text-[10px] uppercase tracking-wider text-stone-500 font-bold shrink-0'>
-                            Hue
-                          </span>
-                          <input
-                            type='range'
-                            min='0'
-                            max='360'
-                            value={customHue ?? generateUniqueHue(existingHues)}
-                            onChange={(e) =>
-                              onUpdateTagColor(tag, parseInt(e.target.value))
-                            }
-                            className='flex-1 h-2 rounded-full appearance-none cursor-pointer'
-                            style={{
-                              background: `linear-gradient(to right, 
-                                hsl(0, 70%, 50%), 
-                                hsl(60, 70%, 50%), 
-                                hsl(120, 70%, 50%), 
-                                hsl(180, 70%, 50%), 
-                                hsl(240, 70%, 50%), 
-                                hsl(300, 70%, 50%), 
-                                hsl(360, 70%, 50%)
-                              )`,
-                            }}
-                          />
-                          <span className='text-xs font-mono text-stone-400 w-8 text-right'>
-                            {customHue ?? '—'}°
-                          </span>
-                        </div>
-
-                        {/* Preview */}
-                        <div className='mt-3 flex items-center gap-2'>
-                          <span className='text-[10px] uppercase tracking-wider text-stone-500 font-bold'>
-                            Preview:
-                          </span>
-                          <span
-                            className={`text-[10px] px-2.5 py-1 rounded-full border font-bold uppercase tracking-wider ${displayClasses}`}
-                          >
-                            {tag}
-                          </span>
-                        </div>
+                    <div className='text-left min-w-0'>
+                      <div
+                        className={`text-xs font-bold truncate ${isSelected ? 'text-white' : 'text-stone-400 group-hover:text-stone-200'}`}
+                      >
+                        {tag}
                       </div>
+                      <div className='text-[9px] uppercase tracking-widest text-stone-600 mt-0.5 font-bold'>
+                        {isBuiltInTag(tag) ? 'Core' : 'Custom'}
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <div className='absolute top-2 right-2 w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_8px_white]' />
                     )}
-                  </div>
+                  </button>
                 );
               })}
             </div>
-          )}
+          </div>
+
+          {/* EDITOR PANEL */}
+          <div className='w-72 bg-[#161616] border-l border-stone-800 p-8 flex flex-col'>
+            {selectedTag ? (
+              <div className='animate-in fade-in slide-in-from-right-4 duration-300 flex flex-col h-full'>
+                <div className='flex-1'>
+                  <span className='text-[10px] font-bold uppercase tracking-widest text-stone-500 mb-6 block'>
+                    Active Selection
+                  </span>
+                  <div className='mb-8 text-center'>
+                    <div
+                      className={`w-24 h-24 rounded-2xl border-2 mx-auto mb-4 flex items-center justify-center shadow-2xl transition-all duration-300
+                                    ${
+                                      getTagHue(selectedTag) !== null
+                                        ? hueToColorClasses(
+                                            getTagHue(selectedTag)!,
+                                          )
+                                        : CATEGORY_COLORS[selectedTag] ||
+                                          CATEGORY_COLORS['All']
+                                    }
+                                `}
+                    >
+                      <span className='text-2xl font-black italic'>
+                        {selectedTag.substring(0, 1)}
+                      </span>
+                    </div>
+                    <h3 className='text-lg font-bold text-white truncate'>
+                      {selectedTag}
+                    </h3>
+                    {isBuiltInTag(selectedTag) && (
+                      <span className='text-[9px] font-bold text-stone-600 uppercase tracking-tighter'>
+                        Built-in Component
+                      </span>
+                    )}
+                  </div>
+
+                  <div className='space-y-6'>
+                    <div>
+                      <div className='flex items-center justify-between mb-3'>
+                        <span className='text-[10px] font-bold uppercase tracking-widest text-stone-400'>
+                          Hue Spectrum
+                        </span>
+                        <span className='text-xs font-mono text-stone-500'>
+                          {getTagHue(selectedTag) ?? '—'}°
+                        </span>
+                      </div>
+                      <div className='relative h-6 group'>
+                        <input
+                          type='range'
+                          min='0'
+                          max='360'
+                          value={
+                            getTagHue(selectedTag) ??
+                            generateUniqueHue(existingHues)
+                          }
+                          onChange={(e) =>
+                            onUpdateTagColor(
+                              selectedTag,
+                              parseInt(e.target.value),
+                            )
+                          }
+                          className='absolute inset-0 w-full h-2 rounded-full appearance-none cursor-pointer mt-2 bg-transparent'
+                          style={{
+                            backgroundImage: `linear-gradient(to right, 
+                                                    hsl(0, 100%, 50%), 
+                                                    hsl(60, 100%, 50%), 
+                                                    hsl(120, 100%, 50%), 
+                                                    hsl(180, 100%, 50%), 
+                                                    hsl(240, 100%, 50%), 
+                                                    hsl(300, 100%, 50%), 
+                                                    hsl(360, 100%, 50%)
+                                                )`,
+                          }}
+                        />
+                        <style>{`
+                                            input[type=range]::-webkit-slider-thumb {
+                                                -webkit-appearance: none;
+                                                appearance: none;
+                                                width: 16px;
+                                                height: 16px;
+                                                background: white;
+                                                border-radius: 50%;
+                                                cursor: pointer;
+                                                border: 2px solid #000;
+                                                box-shadow: 0 0 10px rgba(255,255,255,0.4);
+                                            }
+                                        `}</style>
+                      </div>
+                    </div>
+
+                    {getTagHue(selectedTag) !== null && (
+                      <button
+                        onClick={() => onResetTagColor(selectedTag)}
+                        className='w-full py-3 bg-stone-900 hover:bg-red-950/20 text-stone-500 hover:text-red-500 border border-stone-800 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all'
+                      >
+                        <RotateCcw size={12} className='inline mr-2 mb-0.5' />
+                        Reset to Default
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className='pt-8 border-t border-stone-800'>
+                  <p className='text-[9px] leading-relaxed text-stone-600'>
+                    Changes are synchronized in real-time with the local
+                    database instance.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className='flex flex-col items-center justify-center h-full text-center'>
+                <div className='w-12 h-12 border-2 border-stone-800 border-dashed rounded-xl mb-4 flex items-center justify-center text-stone-800'>
+                  <Palette size={20} />
+                </div>
+                <p className='text-xs text-stone-600 font-medium px-4'>
+                  Select a node class from the left to adjust its chromatic
+                  signature.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* FOOTER */}
-        <div className='px-6 py-4 border-t border-stone-800 bg-[#161616] shrink-0 flex justify-end'>
+        <div className='px-8 py-5 border-t border-stone-800 bg-[#161616] shrink-0 flex justify-between items-center'>
+          <span className='text-[10px] font-bold text-stone-600 uppercase tracking-widest'>
+            {allTags.length} Unique Nodes Detected
+          </span>
           <button
             onClick={handleClose}
-            className='px-6 py-2 bg-stone-200 text-black rounded-lg text-sm font-bold hover:bg-white transition-all'
+            className='px-8 py-2.5 bg-stone-100 text-black rounded-lg text-sm font-bold hover:bg-white transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] active:scale-95'
           >
-            Done
+            Finish Configuration
           </button>
         </div>
       </div>

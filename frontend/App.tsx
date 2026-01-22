@@ -37,7 +37,7 @@ import {
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { generateUniqueHue } from './constants';
-import * as api from "./services/api";
+import * as api from './services/api';
 
 const ToastContainer: React.FC<{
   toasts: ToastMessage[];
@@ -56,8 +56,8 @@ const ToastContainer: React.FC<{
                 toast.type === 'success'
                   ? 'bg-emerald-500/10 text-emerald-500'
                   : toast.type === 'error'
-                  ? 'bg-rose-500/10 text-rose-500'
-                  : 'bg-sky-500/10 text-sky-500'
+                    ? 'bg-rose-500/10 text-rose-500'
+                    : 'bg-sky-500/10 text-sky-500'
               }`}
             >
               {toast.type === 'success' && <Check size={18} />}
@@ -88,7 +88,7 @@ const ToastContainer: React.FC<{
         </div>
       ))}
     </div>,
-    document.body
+    document.body,
   );
 };
 
@@ -103,7 +103,7 @@ export const detectTags = (content: string): string[] => {
     matches(/(^|\s)elif\s+/i) ||
     matches(/print\s*\(/i) ||
     matches(
-      /(^|\s)import\s+(numpy|pandas|os|sys|json|math|random|django|flask|torch|tensorflow)(\s|$)/i
+      /(^|\s)import\s+(numpy|pandas|os|sys|json|math|random|django|flask|torch|tensorflow)(\s|$)/i,
     ) ||
     matches(/(^|\s)from\s+\w+\s+import\s+/i) ||
     matches(/if\s+__name__\s*==\s*['"]__main__['"]/i) ||
@@ -259,7 +259,7 @@ const App: React.FC = () => {
     message: string,
     type: ToastType = 'info',
     actionLabel?: string,
-    onAction?: () => void
+    onAction?: () => void,
   ) => {
     const id = nanoid();
     setToasts((prev) => [
@@ -268,7 +268,7 @@ const App: React.FC = () => {
     ]);
     setTimeout(
       () => setToasts((prev) => prev.filter((t) => t.id !== id)),
-      actionLabel ? 6000 : 3000
+      actionLabel ? 6000 : 3000,
     );
   };
 
@@ -278,7 +278,7 @@ const App: React.FC = () => {
     const loadData = async () => {
       try {
         const [loadedBlocks, loadedTagColors, loadedStacks] = await Promise.all(
-          [api.getAllBlocks(), api.getAllTagColors(), api.getAllStacks()]
+          [api.getAllBlocks(), api.getAllTagColors(), api.getAllStacks()],
         );
 
         setBlocks(loadedBlocks);
@@ -330,7 +330,7 @@ const App: React.FC = () => {
       });
       await api.setTagColor(name, hue);
     },
-    []
+    [],
   );
 
   const handleResetTagColor = useCallback(async (name: string) => {
@@ -359,30 +359,63 @@ const App: React.FC = () => {
         prev.map((b) =>
           b.stackId === stackId
             ? { ...b, stackId: undefined, stackOrder: undefined }
-            : b
-        )
+            : b,
+        ),
       );
       if (activeStackId === stackId) setActiveStackId(null);
       await api.deleteStack(stackId);
       if (stack) addToast(`Stack "${stack.name}" deleted`, 'info');
     },
-    [stacks, activeStackId]
+    [stacks, activeStackId],
   );
 
   const handleRenameStack = useCallback(
     async (stackId: string, name: string) => {
       setStacks((prev) =>
-        prev.map((s) => (s.id === stackId ? { ...s, name } : s))
+        prev.map((s) => (s.id === stackId ? { ...s, name } : s)),
       );
       await api.updateStack(stackId, name);
     },
-    []
+    [],
+  );
+
+  const handleMoveToStack = useCallback(
+    async (blockIds: string[], stackId: string | null) => {
+      setBlocks((prev) =>
+        prev.map((b) =>
+          blockIds.includes(b.id)
+            ? { ...b, stackId: stackId || undefined, stackOrder: undefined }
+            : b,
+        ),
+      );
+
+      try {
+        await Promise.all(
+          blockIds.map((id) =>
+            api.updateBlock(id, { stackId: stackId || null }),
+          ),
+        );
+        const stackName = stackId
+          ? stacks.find((s) => s.id === stackId)?.name
+          : 'All Prompts';
+        addToast(
+          `Moved ${blockIds.length} prompt${
+            blockIds.length > 1 ? 's' : ''
+          } to ${stackName}`,
+          'success',
+        );
+      } catch (error) {
+        console.error('Failed to move blocks:', error);
+        addToast('Failed to move to stack', 'error');
+      }
+    },
+    [stacks],
   );
 
   // Tag filter handlers
   const handleToggleTag = useCallback((tag: string) => {
     setActiveTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
     );
   }, []);
 
@@ -445,8 +478,8 @@ const App: React.FC = () => {
       setTimeout(() => {
         setBlocks((prev) =>
           prev.map((b) =>
-            b.id === newBlock.id ? { ...b, isDeleting: false } : b
-          )
+            b.id === newBlock.id ? { ...b, isDeleting: false } : b,
+          ),
         );
       }, 10);
 
@@ -461,11 +494,11 @@ const App: React.FC = () => {
       setTimeout(scrollToTop, 100);
       setTimeout(() => {
         setBlocks((prev) =>
-          prev.map((b) => (b.id === newBlock.id ? { ...b, isNew: false } : b))
+          prev.map((b) => (b.id === newBlock.id ? { ...b, isNew: false } : b)),
         );
       }, 2000);
     },
-    [tagColors, tagColorMap, handleUpdateTagColor]
+    [tagColors, tagColorMap, handleUpdateTagColor],
   );
 
   const handleAddTempBlock = () => {
@@ -485,14 +518,14 @@ const App: React.FC = () => {
     setTimeout(() => {
       setBlocks((prev) =>
         prev.map((b) =>
-          b.id === newBlock.id ? { ...b, isDeleting: false } : b
-        )
+          b.id === newBlock.id ? { ...b, isDeleting: false } : b,
+        ),
       );
     }, 10);
 
     setTimeout(() => {
       setBlocks((prev) =>
-        prev.map((b) => (b.id === newBlock.id ? { ...b, isNew: false } : b))
+        prev.map((b) => (b.id === newBlock.id ? { ...b, isNew: false } : b)),
       );
     }, 2000);
 
@@ -512,7 +545,7 @@ const App: React.FC = () => {
         return prev.map((b) => (b.id === id ? { ...b, ...updates } : b));
       });
     },
-    []
+    [],
   );
 
   const removeBlock = useCallback(
@@ -520,7 +553,7 @@ const App: React.FC = () => {
       let blockToRestore: PromptBlockData | null = null;
 
       setBlocks((prev) =>
-        prev.map((b) => (b.id === id ? { ...b, isDeleting: true } : b))
+        prev.map((b) => (b.id === id ? { ...b, isDeleting: true } : b)),
       );
 
       setTimeout(() => {
@@ -562,14 +595,14 @@ const App: React.FC = () => {
                 setTimeout(() => {
                   setBlocks((p) =>
                     p.map((b) =>
-                      b.id === id ? { ...b, isDeleting: false } : b
-                    )
+                      b.id === id ? { ...b, isDeleting: false } : b,
+                    ),
                   );
                 }, 10);
 
                 setTimeout(() => {
                   setBlocks((p) =>
-                    p.map((b) => (b.id === id ? { ...b, isNew: false } : b))
+                    p.map((b) => (b.id === id ? { ...b, isNew: false } : b)),
                   );
                 }, 2000);
 
@@ -585,7 +618,7 @@ const App: React.FC = () => {
       setMixerIds((prev) => prev.filter((mid) => mid !== id));
       if (focusedBlockId === id) setFocusedBlockId(null);
     },
-    [focusedBlockId]
+    [focusedBlockId],
   );
 
   // Global paste handler
@@ -651,7 +684,7 @@ const App: React.FC = () => {
 
   const toggleMixerItem = (id: string) => {
     setMixerIds((prev) =>
-      prev.includes(id) ? prev.filter((mid) => mid !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((mid) => mid !== id) : [...prev, id],
     );
   };
 
@@ -701,7 +734,7 @@ const App: React.FC = () => {
 
           return true;
         })
-        .map((b) => b.id)
+        .map((b) => b.id),
     );
   }, [gridBlocks, searchQuery, activeTags]);
 
@@ -885,6 +918,8 @@ const App: React.FC = () => {
         onUpdateBlock={updateBlock}
         onDeleteBlock={removeBlock}
         isOverlay={columnCount > 3}
+        stacks={stacks}
+        onMoveToStack={(stackId) => handleMoveToStack(mixerIds, stackId)}
       />
 
       {/* OVERLAYS */}
@@ -900,6 +935,7 @@ const App: React.FC = () => {
           onClose={() => setFocusedBlockId(null)}
           onUpdate={(updates) => updateBlock(focusedBlock.id, updates)}
           onDelete={() => removeBlock(focusedBlock.id)}
+          stacks={stacks}
         />
       )}
 

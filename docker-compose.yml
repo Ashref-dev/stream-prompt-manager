@@ -8,7 +8,7 @@ services:
     restart: always
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgrespassword}
       POSTGRES_DB: stream_prompts
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -29,7 +29,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql+asyncpg://postgres:postgrespassword@db:5432/stream_prompts
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://postgres:postgrespassword@db:5432/stream_prompts}
       CORS_ORIGINS: 'http://localhost:3000,http://localhost'
     ports:
       - '8000:8000'

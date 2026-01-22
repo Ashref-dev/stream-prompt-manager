@@ -1,6 +1,6 @@
 import React, { useMemo, useEffect, useRef } from 'react';
-import { PromptBlockData } from '../types';
-import { Copy, X, Disc, Trash2, Server, Plus } from 'lucide-react';
+import { PromptBlockData, Stack } from '../types';
+import { Copy, X, Disc, Trash2, Server, Plus, GitMerge } from 'lucide-react';
 import {
   DndContext,
   rectIntersection,
@@ -31,6 +31,8 @@ interface MixerProps {
   onUpdateBlock: (id: string, updates: Partial<PromptBlockData>) => void;
   onDeleteBlock: (id: string) => void;
   isOverlay?: boolean;
+  stacks: Stack[];
+  onMoveToStack: (stackId: string | null) => void;
 }
 
 interface SortableMixerItemProps {
@@ -85,8 +87,8 @@ const SortableMixerItem = React.memo(
           isDragging
             ? 'border-stone-500 bg-[#252525] shadow-2xl scale-[1.02] z-50 ring-1 ring-white/10'
             : isTemp
-            ? 'border-stone-900 bg-black hover:border-stone-800' // Temp Styling: Darker than normal, subtle border
-            : 'border-stone-800 bg-[#1c1c1c] hover:border-stone-600 hover:bg-[#222222]' // Standard Styling
+              ? 'border-stone-900 bg-black hover:border-stone-800' // Temp Styling: Darker than normal, subtle border
+              : 'border-stone-800 bg-[#1c1c1c] hover:border-stone-600 hover:bg-[#222222]' // Standard Styling
         }
       `}
       >
@@ -110,7 +112,7 @@ const SortableMixerItem = React.memo(
         </div>
 
         {/* CONTENT */}
-        <div className='flex-1 p-3 min-w-0 flex flex-col justify-center'>
+        <div className='flex-1 p-3 min-w-0 flex flex-col justify-center gap-2'>
           <div className='flex items-center justify-between mb-1'>
             <div className='flex items-center gap-2'>
               <span
@@ -143,21 +145,23 @@ const SortableMixerItem = React.memo(
             </button>
           </div>
 
-          {isTemp ? (
-            <textarea
-              ref={textareaRef}
-              value={block.content}
-              onChange={handleTextChange}
-              placeholder='Type temporary instruction...'
-              className='w-full bg-transparent text-[11px] font-mono text-stone-300 font-medium resize-none focus:outline-none placeholder:text-stone-700 overflow-hidden leading-tight'
-              rows={2}
-              spellCheck={false}
-            />
-          ) : (
-            <p className='text-[11px] font-mono text-stone-400 font-medium line-clamp-2 leading-tight tracking-tight cursor-text select-text pointer-events-auto'>
-              {block.content}
-            </p>
-          )}
+          <div className='relative'>
+            {isTemp ? (
+              <textarea
+                ref={textareaRef}
+                value={block.content}
+                onChange={handleTextChange}
+                placeholder='Type temporary instruction...'
+                className='w-full bg-transparent text-[11px] font-mono text-stone-300 font-medium resize-none focus:outline-none placeholder:text-stone-700 overflow-hidden leading-tight'
+                rows={4}
+                spellCheck={false}
+              />
+            ) : (
+              <p className='text-[11px] font-mono text-stone-300 font-medium leading-relaxed tracking-tight cursor-text select-text pointer-events-auto whitespace-pre-wrap'>
+                {block.content}
+              </p>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -169,7 +173,7 @@ const SortableMixerItem = React.memo(
       prev.block.content === next.block.content &&
       prev.block.tags === next.block.tags
     );
-  }
+  },
 );
 
 const Mixer: React.FC<MixerProps> = ({
@@ -183,14 +187,17 @@ const Mixer: React.FC<MixerProps> = ({
   onUpdateBlock,
   onDeleteBlock,
   isOverlay = false,
+  stacks,
+  onMoveToStack,
 }) => {
+  const [isMoveMenuOpen, setIsMoveMenuOpen] = React.useState(false);
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 5 },
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -198,14 +205,16 @@ const Mixer: React.FC<MixerProps> = ({
     if (over && active.id !== over.id) {
       const oldIndex = blocks.findIndex((b) => b.id === active.id);
       const newIndex = blocks.findIndex((b) => b.id === over.id);
-      const newOrder = arrayMove(blocks, oldIndex, newIndex).map((b) => b.id);
+      const newOrder = arrayMove(blocks, oldIndex, newIndex).map(
+        (b: any) => b.id as string,
+      );
       onReorder(newOrder);
     }
   };
 
   const handleRemoveItem = (id: string) => {
     const block = blocks.find((b) => b.id === id);
-    if (block?.isTemp) {
+    if ((block as any)?.isTemp) {
       // If it's a temp block, delete it entirely from the app state
       onDeleteBlock(id);
     } else {
@@ -216,7 +225,7 @@ const Mixer: React.FC<MixerProps> = ({
 
   const compiledPrompt = useMemo(
     () => blocks.map((b) => b.content).join('\n\n'),
-    [blocks]
+    [blocks],
   );
 
   const handleCopy = () => {
@@ -320,23 +329,45 @@ const Mixer: React.FC<MixerProps> = ({
       </div>
 
       {/* CONTROL UNIT - Card Grey (#161616) */}
-      <div className='p-6 bg-[#161616] border-t border-stone-800 shrink-0 space-y-5 shadow-[0_-20px_50px_rgba(0,0,0,0.7)]'>
-        <div className='space-y-2'>
-          <div className='flex items-center justify-between'>
-            <span className='text-[9px] font-bold uppercase tracking-wider text-stone-500'>
-              Preview Buffer
-            </span>
-            <span className='text-[9px] font-mono text-stone-600'>
-              {compiledPrompt.length} chars
-            </span>
+      <div className='p-6 bg-[#161616] border-t border-stone-800 shrink-0 space-y-4 shadow-[0_-20px_50px_rgba(0,0,0,0.7)]'>
+        {blocks.length > 0 && (
+          <div className='relative'>
+            <button
+              onClick={() => setIsMoveMenuOpen(!isMoveMenuOpen)}
+              className='w-full py-2.5 bg-stone-900 hover:bg-stone-800 text-stone-400 hover:text-white border border-stone-800 rounded-md text-[10px] font-bold uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2'
+            >
+              <GitMerge size={12} />
+              Move Mounted to Stack
+            </button>
+
+            {isMoveMenuOpen && (
+              <div className='absolute bottom-full left-0 right-0 mb-2 p-1 bg-[#1c1c1c] border border-stone-800 rounded-lg shadow-2xl z-[60] flex flex-col'>
+                <button
+                  onClick={() => {
+                    onMoveToStack(null);
+                    setIsMoveMenuOpen(false);
+                  }}
+                  className='p-2 text-left text-[10px] font-bold uppercase text-stone-400 hover:text-white hover:bg-stone-800 rounded transition-colors'
+                >
+                  No Stack (Remove)
+                </button>
+                <div className='h-px bg-stone-800 my-1' />
+                {stacks.map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => {
+                      onMoveToStack(s.id);
+                      setIsMoveMenuOpen(false);
+                    }}
+                    className='p-2 text-left text-[10px] font-bold uppercase text-stone-400 hover:text-white hover:bg-stone-800 rounded transition-colors'
+                  >
+                    {s.name}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-          <textarea
-            readOnly
-            value={compiledPrompt}
-            className='w-full h-24 p-3 bg-[#0a0a0a] rounded-md border border-stone-800 font-mono text-[10px] text-stone-500 focus:outline-none focus:border-stone-700 resize-none custom-scrollbar leading-tight selection:bg-stone-800 selection:text-white'
-            placeholder='// Awaiting signal mount...'
-          />
-        </div>
+        )}
 
         <div className='grid grid-cols-1 gap-3'>
           <button

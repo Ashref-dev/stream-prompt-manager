@@ -61,15 +61,15 @@ const StacksBar: React.FC<StacksBarProps> = ({
       <button
         onClick={() => onSelectStack(null)}
         className={`
-          text-[11px] px-3 py-1.5 rounded-md font-semibold transition-all whitespace-nowrap shrink-0
+          text-[10px] px-4 py-2 rounded-lg font-black uppercase tracking-widest transition-all whitespace-nowrap shrink-0 border
           ${
             activeStackId === null
-              ? 'bg-white text-black shadow-lg'
-              : 'text-stone-400 hover:text-white hover:bg-stone-800'
+              ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.2)] scale-105'
+              : 'text-stone-500 border-stone-900 hover:text-white hover:bg-stone-900'
           }
         `}
       >
-        All Prompts
+        Universal
       </button>
 
       {/* Stack Tabs */}
@@ -85,18 +85,18 @@ const StacksBar: React.FC<StacksBarProps> = ({
                 if (e.key === 'Enter') handleSaveEdit();
                 if (e.key === 'Escape') setEditingId(null);
               }}
-              className='text-[11px] px-3 py-1.5 rounded-md font-semibold bg-stone-800 border border-stone-600 text-white outline-none w-32'
+              className='text-[10px] px-4 py-2 rounded-lg font-black uppercase tracking-widest bg-stone-900 border border-stone-700 text-white outline-none w-32'
             />
           ) : (
             <button
               onClick={() => onSelectStack(stack.id)}
               onDoubleClick={() => handleStartEdit(stack)}
               className={`
-                text-[11px] px-3 py-1.5 rounded-md font-semibold transition-all whitespace-nowrap
+                text-[10px] px-4 py-2 rounded-lg font-black uppercase tracking-widest transition-all whitespace-nowrap border
                 ${
                   activeStackId === stack.id
-                    ? 'bg-stone-200 text-black shadow-lg'
-                    : 'text-stone-400 hover:text-white hover:bg-stone-800'
+                    ? 'bg-stone-200 text-black border-stone-200 shadow-xl scale-105'
+                    : 'text-stone-500 border-stone-900 hover:border-stone-700 hover:text-stone-300'
                 }
               `}
             >
@@ -111,8 +111,8 @@ const StacksBar: React.FC<StacksBarProps> = ({
                 e.stopPropagation();
                 onDeleteStack(stack.id);
               }}
-              className='absolute -top-1 -right-1 w-4 h-4 bg-red-500 hover:bg-red-400 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity'
-              title='Delete Stack'
+              className='absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-600 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:scale-110 shadow-lg z-10'
+              title='Purge Stack'
             >
               <X size={10} className='text-white' />
             </button>
