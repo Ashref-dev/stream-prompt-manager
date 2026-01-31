@@ -1,7 +1,7 @@
 # Frontend Dockerfile
 
 # Stage 1: Build
-FROM oven/bun:1 AS builder
+FROM oven/bun:1.3.5-alpine AS builder
 
 WORKDIR /app
 
@@ -13,6 +13,10 @@ RUN bun install --frozen-lockfile
 
 # Copy source code
 COPY . .
+
+# Set build arguments
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
 
 # Build the app
 RUN bun run build
