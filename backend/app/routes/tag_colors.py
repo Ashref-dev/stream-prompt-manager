@@ -27,15 +27,18 @@ async def set_tag_color(
 ):
     """Set or update a tag color."""
     # Postgres upsert
-    stmt = insert(TagColorModel).values(name=tag_name, hue=color.hue)
+    stmt = insert(TagColorModel).values(
+        name=tag_name, hue=color.hue, lightness=color.lightness
+    )
     stmt = stmt.on_conflict_do_update(
-        index_elements=["name"], set_={"hue": stmt.excluded.hue}
+        index_elements=["name"],
+        set_={"hue": stmt.excluded.hue, "lightness": stmt.excluded.lightness},
     )
     
     await db.execute(stmt)
     await db.commit()
 
-    return TagColor(name=tag_name, hue=color.hue)
+    return TagColor(name=tag_name, hue=color.hue, lightness=color.lightness)
 
 
 @router.delete("/{tag_name}", status_code=status.HTTP_204_NO_CONTENT)

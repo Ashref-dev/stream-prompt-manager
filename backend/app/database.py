@@ -29,6 +29,17 @@ async def init_database():
     """Initialize database tables"""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await conn.execute(
+            text(
+                "ALTER TABLE tag_colors "
+                "ADD COLUMN IF NOT EXISTS lightness INTEGER NOT NULL DEFAULT 32"
+            )
+        )
+        await conn.execute(
+            text(
+                "UPDATE tag_colors SET lightness = 32 WHERE lightness IS NULL"
+            )
+        )
 
 
 async def seed_database():

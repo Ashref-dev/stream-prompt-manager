@@ -6,7 +6,7 @@ from enum import Enum
 from typing import Optional, List
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import Column, String, Integer, DateTime, Text, ForeignKey, JSON
+from sqlalchemy import Column, String, Integer, DateTime, Text, ForeignKey, JSON, text
 from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy.sql import func
 
@@ -30,6 +30,7 @@ class TagColorModel(Base):
 
     name = Column(String, primary_key=True)
     hue = Column(Integer, nullable=False)
+    lightness = Column(Integer, nullable=False, server_default=text("32"))
 
 
 class StackModel(Base):
@@ -95,6 +96,7 @@ class PromptBlock(PromptBlockBase):
 class TagColorBase(BaseModel):
     name: str
     hue: int
+    lightness: int = 32
 
 
 class TagColorCreate(TagColorBase):

@@ -36,7 +36,11 @@ import {
   Settings,
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
-import { generateUniqueHue } from './constants';
+import {
+  CATEGORY_COLORS,
+  DEFAULT_TAG_LIGHTNESS,
+  generateUniqueHue,
+} from './constants';
 import * as api from './services/api';
 
 const ToastContainer: React.FC<{
@@ -92,134 +96,6 @@ const ToastContainer: React.FC<{
   );
 };
 
-// Advanced Tag Detection System
-export const detectTags = (content: string): string[] => {
-  const tags = new Set<string>();
-  const matches = (regex: RegExp) => regex.test(content);
-
-  // Python
-  if (
-    matches(/(^|\s)def\s+/i) ||
-    matches(/(^|\s)elif\s+/i) ||
-    matches(/print\s*\(/i) ||
-    matches(
-      /(^|\s)import\s+(numpy|pandas|os|sys|json|math|random|django|flask|torch|tensorflow)(\s|$)/i,
-    ) ||
-    matches(/(^|\s)from\s+\w+\s+import\s+/i) ||
-    matches(/if\s+__name__\s*==\s*['"]__main__['"]/i) ||
-    matches(/__init__/i) ||
-    matches(/self\./i) ||
-    matches(/kwargs/i) ||
-    matches(/pip\s+install/i)
-  ) {
-    tags.add('Python');
-  }
-
-  // JavaScript
-  if (
-    matches(/(^|\s)(const|let|var)\s+/i) ||
-    matches(/(^|\s)function\s+/i) ||
-    matches(/console\.(log|error|warn)/i) ||
-    matches(/=>/i) ||
-    matches(/export\s+(default|const|class|function)/i) ||
-    matches(/module\.exports/i) ||
-    matches(/npm\s+install/i) ||
-    matches(/yarn\s+add/i)
-  ) {
-    tags.add('JavaScript');
-  }
-
-  // TypeScript
-  if (
-    matches(/:\s*(string|number|boolean|any|void|unknown|never)/i) ||
-    matches(/interface\s+\w+/i) ||
-    matches(/type\s+\w+\s*=/i) ||
-    matches(/as\s+const/i) ||
-    matches(/<[A-Z][\w]*\s+[^>]*>/i)
-  ) {
-    tags.add('TypeScript');
-    tags.delete('JavaScript');
-  }
-
-  // React
-  if (
-    matches(/useState|useEffect|useMemo|useCallback|useContext|useRef/i) ||
-    matches(/className=/i) ||
-    matches(/<[A-Z]\w+/) ||
-    matches(/<\/>/i) ||
-    matches(/react/i)
-  ) {
-    tags.add('React');
-    if (
-      matches(/NextResponse/i) ||
-      matches(/getServerSideProps/i) ||
-      matches(/getStaticProps/i) ||
-      matches(/['"]use client['"]/i) ||
-      matches(/next\/[a-z]+/i)
-    ) {
-      tags.add('Next.js');
-    }
-  }
-
-  // C# / Unity
-  if (
-    matches(/public\s+class\s+/i) ||
-    matches(/private\s+void\s+/i) ||
-    matches(/using\s+System/i) ||
-    matches(/Console\.WriteLine/i)
-  ) {
-    tags.add('C#');
-  }
-  if (
-    matches(/MonoBehaviour/i) ||
-    matches(/\[SerializeField\]/i) ||
-    matches(/GameObject/i) ||
-    matches(/GetComponent/i)
-  ) {
-    tags.add('Unity');
-    tags.add('C#');
-  }
-
-  // C++ / Unreal
-  if (
-    matches(/#include\s+/i) ||
-    matches(/std::/i) ||
-    matches(/cout\s*<</i) ||
-    matches(/::/i) ||
-    matches(/nullptr/i)
-  ) {
-    tags.add('C++');
-  }
-  if (matches(/UCLASS/i) || matches(/UPROPERTY/i) || matches(/UFUNCTION/i)) {
-    tags.add('Unreal');
-    tags.add('C++');
-  }
-
-  // SQL
-  if (
-    matches(/SELECT\s+.*\s+FROM/i) ||
-    matches(/INSERT\s+INTO/i) ||
-    matches(/UPDATE\s+.*\s+SET/i) ||
-    matches(/DELETE\s+FROM/i) ||
-    matches(/CREATE\s+TABLE/i)
-  ) {
-    tags.add('SQL');
-  }
-
-  // Core categories
-  if (tags.size > 0) tags.add('Code');
-  if (matches(/(you are|act as|role|persona|simulation)/i)) tags.add('Role');
-  if (matches(/(json|markdown|xml|yaml|format|output|structure)/i))
-    tags.add('Output');
-  if (matches(/(do not|avoid|limit|constraint|never|must not|prohibit)/i))
-    tags.add('Rules');
-  if (matches(/(context|project|background|tech stack|database|environment)/i))
-    tags.add('Context');
-
-  if (tags.size === 0) tags.add('Logic');
-  return Array.from(tags);
-};
-
 const App: React.FC = () => {
   // Core state
   const [blocks, setBlocks] = useState<PromptBlockData[]>([]);
@@ -240,6 +116,14 @@ const App: React.FC = () => {
   // UI state
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [radiusMode, setRadiusMode] = useState<'rounded' | 'sharp'>(() => {
+    const saved = localStorage.getItem('stream_radiusMode');
+    return saved === 'sharp' ? 'sharp' : 'rounded';
+  });
+  const [isNarrowViewport, setIsNarrowViewport] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth < 1024;
+  });
 
   // Tag filtering state
   const [activeTags, setActiveTags] = useState<string[]>([]);
@@ -254,6 +138,7 @@ const App: React.FC = () => {
 
   const mainScrollRef = useRef<HTMLDivElement>(null);
   const pendingDeletions = useRef<Record<string, NodeJS.Timeout>>({});
+  const pendingTagColors = useRef<Map<string, number>>(new Map());
 
   const addToast = (
     message: string,
@@ -300,6 +185,18 @@ const App: React.FC = () => {
     localStorage.setItem('stream_columnCount', columnCount.toString());
   }, [columnCount]);
 
+  useEffect(() => {
+    localStorage.setItem('stream_radiusMode', radiusMode);
+    document.body.dataset.radiusMode = radiusMode;
+  }, [radiusMode]);
+
+  useEffect(() => {
+    const handleResize = () => setIsNarrowViewport(window.innerWidth < 1024);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const scrollToTop = () => {
     if (mainScrollRef.current) {
       mainScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
@@ -308,7 +205,7 @@ const App: React.FC = () => {
 
   // Create tag color map for quick lookup
   const tagColorMap = useMemo(() => {
-    return new Map(tagColors.map((tc) => [tc.name, tc.hue]));
+    return new Map(tagColors.map((tc) => [tc.name, tc]));
   }, [tagColors]);
 
   // Collect all unique tags from blocks
@@ -320,15 +217,17 @@ const App: React.FC = () => {
 
   // Handle tag color updates
   const handleUpdateTagColor = useCallback(
-    async (name: string, hue: number) => {
+    async (name: string, hue: number, lightness: number = DEFAULT_TAG_LIGHTNESS) => {
       setTagColors((prev) => {
         const existing = prev.find((tc) => tc.name === name);
         if (existing) {
-          return prev.map((tc) => (tc.name === name ? { ...tc, hue } : tc));
+          return prev.map((tc) =>
+            tc.name === name ? { ...tc, hue, lightness } : tc,
+          );
         }
-        return [...prev, { name, hue }];
+        return [...prev, { name, hue, lightness }];
       });
-      await api.setTagColor(name, hue);
+      await api.setTagColor(name, hue, lightness);
     },
     [],
   );
@@ -337,6 +236,41 @@ const App: React.FC = () => {
     setTagColors((prev) => prev.filter((tc) => tc.name !== name));
     await api.deleteTagColor(name);
   }, []);
+
+  const ensureTagColor = useCallback(
+    (tag: string) => {
+      if (!tag || CATEGORY_COLORS[tag]) return;
+      if (tagColorMap.has(tag) || pendingTagColors.current.has(tag)) return;
+      const existingHues = [
+        ...tagColors.map((tc) => tc.hue),
+        ...pendingTagColors.current.values(),
+      ];
+      const newHue = generateUniqueHue(existingHues);
+      pendingTagColors.current.set(tag, newHue);
+      handleUpdateTagColor(tag, newHue, DEFAULT_TAG_LIGHTNESS).finally(() => {
+        pendingTagColors.current.delete(tag);
+      });
+    },
+    [tagColorMap, tagColors, handleUpdateTagColor],
+  );
+
+  useEffect(() => {
+    if (allTags.length === 0) return;
+    const missingTags = allTags.filter(
+      (tag) =>
+        !CATEGORY_COLORS[tag] &&
+        !tagColorMap.has(tag) &&
+        !pendingTagColors.current.has(tag),
+    );
+    if (missingTags.length === 0) return;
+    const existingHues = tagColors.map((tc) => tc.hue);
+    const nextHues = [...existingHues];
+    missingTags.forEach((tag) => {
+      const newHue = generateUniqueHue(nextHues);
+      nextHues.push(newHue);
+      handleUpdateTagColor(tag, newHue, DEFAULT_TAG_LIGHTNESS);
+    });
+  }, [allTags, tagColors, tagColorMap, handleUpdateTagColor]);
 
   // Stack handlers
   const handleCreateStack = useCallback(async (name: string) => {
@@ -397,7 +331,7 @@ const App: React.FC = () => {
         );
         const stackName = stackId
           ? stacks.find((s) => s.id === stackId)?.name
-          : 'All Prompts';
+          : 'All';
         addToast(
           `Moved ${blockIds.length} prompt${
             blockIds.length > 1 ? 's' : ''
@@ -428,46 +362,12 @@ const App: React.FC = () => {
       const firstLine = content.trim().split('\n')[0];
       const smartTitle =
         firstLine.length > 40 ? firstLine.substring(0, 40) + '...' : firstLine;
-      const autoTags = detectTags(content);
-
-      // Auto-assign colors to new tags
-      const existingHues = tagColors.map((tc) => tc.hue);
-      for (const tag of autoTags) {
-        if (
-          !tagColorMap.has(tag) &&
-          ![
-            'Role',
-            'Context',
-            'Logic',
-            'Code',
-            'Rules',
-            'Output',
-            'Python',
-            'React',
-            'TypeScript',
-            'JavaScript',
-            'Next.js',
-            'C#',
-            'Unity',
-            'C++',
-            'Unreal',
-            'SQL',
-            'All',
-            'Temp',
-          ].includes(tag)
-        ) {
-          const newHue = generateUniqueHue(existingHues);
-          existingHues.push(newHue);
-          handleUpdateTagColor(tag, newHue);
-        }
-      }
-
       const newBlock: PromptBlockData = {
         id: nanoid(),
         type: 'context',
-        title: smartTitle || 'Stream Node',
+        title: smartTitle || 'Stream Prompt',
         content: content,
-        tags: autoTags,
+        tags: [],
         isNew: true,
         isDeleting: true,
       };
@@ -485,7 +385,7 @@ const App: React.FC = () => {
 
       try {
         await api.createBlock(newBlock);
-        addToast('Note synchronized to database', 'success');
+        addToast('Prompt synchronized to database', 'success');
       } catch (error) {
         console.error('Failed to save block:', error);
         addToast('Failed to save to database', 'error');
@@ -498,14 +398,14 @@ const App: React.FC = () => {
         );
       }, 2000);
     },
-    [tagColors, tagColorMap, handleUpdateTagColor],
+    [addToast, scrollToTop],
   );
 
   const handleAddTempBlock = () => {
     const newBlock: PromptBlockData = {
       id: nanoid(),
       type: 'instruction',
-      title: 'Quick Note',
+      title: 'Quick Prompt',
       content: '',
       tags: ['Temp'],
       isTemp: true,
@@ -576,7 +476,7 @@ const App: React.FC = () => {
             }
           }, 6000);
 
-          addToast('Note moved to archives', 'info', 'revert', () => {
+          addToast('Prompt moved to archives', 'info', 'revert', () => {
             if (pendingDeletions.current[id]) {
               clearTimeout(pendingDeletions.current[id]);
               delete pendingDeletions.current[id];
@@ -606,7 +506,7 @@ const App: React.FC = () => {
                   );
                 }, 2000);
 
-                addToast('Note restored successfully', 'success');
+                addToast('Prompt restored successfully', 'success');
               }
             }
           });
@@ -865,6 +765,7 @@ const App: React.FC = () => {
             columnCount={columnCount}
             tagColors={tagColorMap}
             stacks={stacks}
+            activeStackId={activeStackId}
             onFocus={setFocusedBlockId}
             onToggleMix={toggleMixerItem}
             onAdd={() => setIsCreating(true)}
@@ -882,7 +783,7 @@ const App: React.FC = () => {
               className='group-hover:rotate-90 transition-transform duration-300'
             />
             <span className='font-bold text-sm tracking-wide uppercase'>
-              New Node
+              New Prompt
             </span>
           </button>
         </div>
@@ -917,8 +818,9 @@ const App: React.FC = () => {
         onCreateTemp={handleAddTempBlock}
         onUpdateBlock={updateBlock}
         onDeleteBlock={removeBlock}
-        isOverlay={columnCount > 3}
+        isOverlay={isNarrowViewport}
         stacks={stacks}
+        tagColors={tagColorMap}
         onMoveToStack={(stackId) => handleMoveToStack(mixerIds, stackId)}
       />
 
@@ -936,6 +838,8 @@ const App: React.FC = () => {
           onUpdate={(updates) => updateBlock(focusedBlock.id, updates)}
           onDelete={() => removeBlock(focusedBlock.id)}
           stacks={stacks}
+          tagColors={tagColorMap}
+          onEnsureTagColor={ensureTagColor}
         />
       )}
 
@@ -947,6 +851,8 @@ const App: React.FC = () => {
         tagColors={tagColors}
         onUpdateTagColor={handleUpdateTagColor}
         onResetTagColor={handleResetTagColor}
+        radiusMode={radiusMode}
+        onUpdateRadiusMode={setRadiusMode}
       />
 
       <ToastContainer

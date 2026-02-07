@@ -102,6 +102,26 @@
         background-color: #0c0a09; /* Stone-950 */
         color: #e7e5e4; /* Stone-200 */
       }
+      :root {
+        --ui-radius: 14px;
+        --ui-radius-pill: 999px;
+      }
+      [data-radius-mode='sharp'] {
+        --ui-radius: 0px;
+        --ui-radius-pill: 0px;
+      }
+      [data-radius-mode] button,
+      [data-radius-mode] input,
+      [data-radius-mode] select,
+      [data-radius-mode] textarea {
+        border-radius: var(--ui-radius) !important;
+      }
+      [data-radius-mode] [class*='rounded'] {
+        border-radius: var(--ui-radius) !important;
+      }
+      [data-radius-mode] [class*='rounded-full'] {
+        border-radius: var(--ui-radius-pill) !important;
+      }
       /* Elegant Dark Scrollbar */
       ::-webkit-scrollbar {
         width: 6px;
@@ -136,7 +156,7 @@
     </script>
     <link rel="stylesheet" href="/index.css" />
   </head>
-  <body>
+  <body data-radius-mode="rounded">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

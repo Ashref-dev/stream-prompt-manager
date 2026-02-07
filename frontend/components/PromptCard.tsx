@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PromptBlockData } from '../types';
+import { PromptBlockData, TagColor } from '../types';
 import { Check, Copy, Maximize2, GitMerge, Layers } from 'lucide-react';
 import { getTagColorClasses } from '../constants';
 
@@ -7,8 +7,9 @@ interface PromptCardProps {
   block: PromptBlockData;
   isVisible: boolean;
   isMixing: boolean;
-  tagColors: Map<string, number>;
+  tagColors: Map<string, TagColor>;
   stackName?: string;
+  showStackOrder: boolean;
   onClick: () => void;
   onToggleMix: (id: string) => void;
 }
@@ -19,6 +20,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
   isMixing,
   tagColors,
   stackName,
+  showStackOrder,
   onClick,
   onToggleMix,
 }) => {
@@ -62,7 +64,9 @@ const PromptCard: React.FC<PromptCardProps> = ({
       <div className='flex items-center justify-between min-h-[24px]'>
         <div className='flex flex-wrap gap-1.5 max-w-[80%]'>
           {/* Stack Order Badge */}
-          {block.stackOrder !== undefined && (
+          {showStackOrder &&
+            block.stackId &&
+            block.stackOrder !== undefined && (
             <span className='text-[9px] px-2 py-0.5 rounded border bg-stone-800 text-stone-200 border-stone-600 font-bold'>
               #{block.stackOrder}
             </span>
@@ -133,9 +137,6 @@ const PromptCard: React.FC<PromptCardProps> = ({
       {/* FOOTER */}
       <div className='pt-2 mt-auto flex items-center justify-between border-t border-stone-900'>
         <div className='flex items-center gap-2'>
-          <span className='text-[10px] font-bold text-stone-600 uppercase'>
-            {block.type}
-          </span>
           {stackName && (
             <span className='flex items-center gap-1 text-[9px] text-stone-500'>
               <Layers size={10} />

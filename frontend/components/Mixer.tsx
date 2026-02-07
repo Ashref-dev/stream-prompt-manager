@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect, useRef } from 'react';
-import { PromptBlockData, Stack } from '../types';
+import { PromptBlockData, Stack, TagColor } from '../types';
 import { Copy, X, Disc, Trash2, Server, Plus, GitMerge } from 'lucide-react';
 import {
   DndContext,
@@ -18,7 +18,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { CATEGORY_COLORS } from '../constants';
+import { getTagColorClasses } from '../constants';
 
 interface MixerProps {
   isOpen: boolean;
@@ -32,19 +32,21 @@ interface MixerProps {
   onDeleteBlock: (id: string) => void;
   isOverlay?: boolean;
   stacks: Stack[];
+  tagColors: Map<string, TagColor>;
   onMoveToStack: (stackId: string | null) => void;
 }
 
 interface SortableMixerItemProps {
   block: PromptBlockData;
   index: number;
+  tagColors: Map<string, TagColor>;
   onRemove: (id: string) => void;
   onUpdate: (id: string, val: string) => void;
 }
 
 // Optimized Item Component using React.memo
 const SortableMixerItem = React.memo(
-  ({ block, index, onRemove, onUpdate }: SortableMixerItemProps) => {
+  ({ block, index, tagColors, onRemove, onUpdate }: SortableMixerItemProps) => {
     const {
       attributes,
       listeners,
@@ -120,13 +122,12 @@ const SortableMixerItem = React.memo(
                   isTemp ? 'text-stone-600' : 'text-stone-600'
                 }`}
               >
-                {isTemp ? 'STUB' : `NODE 0${index + 1}`}
+                {isTemp ? 'STUB' : `PROMPT 0${index + 1}`}
               </span>
               {block.tags?.[0] && !isTemp && (
                 <span
                   className={`text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-sm border ${
-                    CATEGORY_COLORS[block.tags[0]] ||
-                    'text-stone-500 border-stone-800'
+                    getTagColorClasses(block.tags[0], tagColors)
                   }`}
                 >
                   {block.tags[0]}
@@ -139,7 +140,7 @@ const SortableMixerItem = React.memo(
                 onRemove(block.id);
               }}
               className='text-stone-500 hover:text-red-500 transition-colors p-1'
-              title={isTemp ? 'Delete Stub' : 'Unmount Node'}
+              title={isTemp ? 'Delete Stub' : 'Remove Prompt'}
             >
               <X size={12} />
             </button>
@@ -188,6 +189,7 @@ const Mixer: React.FC<MixerProps> = ({
   onDeleteBlock,
   isOverlay = false,
   stacks,
+  tagColors,
   onMoveToStack,
 }) => {
   const [isMoveMenuOpen, setIsMoveMenuOpen] = React.useState(false);
@@ -230,7 +232,7 @@ const Mixer: React.FC<MixerProps> = ({
 
   const handleCopy = () => {
     navigator.clipboard.writeText(compiledPrompt);
-    onTriggerToast('Signal copied', 'success');
+    onTriggerToast('Prompt copied', 'success');
   };
 
   return (
@@ -249,15 +251,13 @@ const Mixer: React.FC<MixerProps> = ({
       {/* RACK HEADER - Exact Card Grey (#161616) */}
       <div className='h-16 px-6 border-b border-stone-800 flex items-center justify-between shrink-0 bg-[#161616]'>
         <div className='flex items-center gap-3'>
-          {isOverlay && (
-            <button
-              onClick={onClose}
-              className='mr-2 p-2 -ml-2 text-white bg-white/10 hover:bg-white/20 rounded-lg transition-all border border-white/10'
-              title='Close Rack'
-            >
-              <X size={18} />
-            </button>
-          )}
+          <button
+            onClick={onClose}
+            className='mr-2 p-2 -ml-2 text-white bg-white/10 hover:bg-white/20 rounded-lg transition-all border border-white/10'
+            title='Close Rack'
+          >
+            <X size={18} />
+          </button>
           <Server
             size={18}
             className={blocks.length > 0 ? 'text-white' : 'text-stone-700'}
@@ -281,12 +281,6 @@ const Mixer: React.FC<MixerProps> = ({
           >
             <Trash2 size={14} />
           </button>
-          <button
-            onClick={onClose}
-            className='lg:hidden p-2 text-stone-500 hover:text-white'
-          >
-            <X size={20} />
-          </button>
         </div>
       </div>
 
@@ -299,7 +293,7 @@ const Mixer: React.FC<MixerProps> = ({
               Rack Standby
             </p>
             <p className='text-[10px] text-stone-800 mt-2'>
-              Mount nodes to activate stream.
+              Add prompts to activate stream.
             </p>
           </div>
         ) : (
@@ -318,6 +312,7 @@ const Mixer: React.FC<MixerProps> = ({
                     key={block.id}
                     block={block}
                     index={idx}
+                    tagColors={tagColors}
                     onRemove={handleRemoveItem}
                     onUpdate={(id, val) => onUpdateBlock(id, { content: val })}
                   />
@@ -375,7 +370,7 @@ const Mixer: React.FC<MixerProps> = ({
             disabled={blocks.length === 0}
             className='w-full py-4 bg-white text-black rounded-md text-xs font-bold uppercase tracking-widest hover:bg-stone-200 transition-all disabled:opacity-10 disabled:grayscale flex items-center justify-center gap-2 shadow-lg'
           >
-            <Copy size={14} /> Commit Signal
+            <Copy size={14} /> Copy Prompt
           </button>
         </div>
       </div>

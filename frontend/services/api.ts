@@ -2,6 +2,7 @@
  * API Service - Handles all backend communication
  */
 import { PromptBlockData, TagColor, Stack } from '../types';
+import { DEFAULT_TAG_LIGHTNESS } from '../constants';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -73,16 +74,25 @@ export async function deleteBlock(id: string): Promise<void> {
 export async function getAllTagColors(): Promise<TagColor[]> {
   const response = await fetch(`${API_URL}/api/tag-colors`);
   if (!response.ok) throw new Error('Failed to fetch tag colors');
-  return response.json();
+  const data = await response.json();
+  return data.map((tc: any) => ({
+    name: tc.name,
+    hue: tc.hue,
+    lightness: tc.lightness ?? DEFAULT_TAG_LIGHTNESS,
+  }));
 }
 
-export async function setTagColor(name: string, hue: number): Promise<void> {
+export async function setTagColor(
+  name: string,
+  hue: number,
+  lightness: number
+): Promise<void> {
   const response = await fetch(
     `${API_URL}/api/tag-colors/${encodeURIComponent(name)}`,
     {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, hue }),
+      body: JSON.stringify({ name, hue, lightness }),
     }
   );
   if (!response.ok) throw new Error('Failed to set tag color');

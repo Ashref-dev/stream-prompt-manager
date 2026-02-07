@@ -1,8 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, CornerDownLeft, Sparkles, Tag } from 'lucide-react';
+import { X, CornerDownLeft, Sparkles } from 'lucide-react';
 import gsap from 'gsap';
-import { detectTags } from '../App';
-import { CATEGORY_COLORS } from '../constants';
 
 interface QuickCreatorProps {
   isOpen: boolean;
@@ -45,8 +43,6 @@ const QuickCreator: React.FC<QuickCreatorProps> = ({ isOpen, onClose, onSubmit }
     }
   };
 
-  const detectedTags = content.trim() ? detectTags(content) : [];
-
   if (!isOpen) return null;
 
   return (
@@ -67,7 +63,7 @@ const QuickCreator: React.FC<QuickCreatorProps> = ({ isOpen, onClose, onSubmit }
         <div className="flex items-center justify-between px-6 py-4 border-b border-stone-800 bg-[#161616]">
             <h2 className="text-lg font-bold text-white flex items-center gap-2">
                 <Sparkles size={16} className="text-stone-400" />
-                Quick Note
+                Quick Prompt
             </h2>
             <button onClick={onClose} className="text-stone-500 hover:text-white p-1 rounded-md transition-colors">
                 <X size={20} />
@@ -88,17 +84,9 @@ const QuickCreator: React.FC<QuickCreatorProps> = ({ isOpen, onClose, onSubmit }
         {/* Footer / Actions */}
         <div className="px-6 py-4 bg-[#161616] border-t border-stone-800 flex items-center justify-between">
             <div className="flex items-center gap-3">
-                {detectedTags.length > 0 && (
-                    <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2">
-                        <Tag size={12} className="text-stone-500"/>
-                        {detectedTags.map(tag => (
-                            <div key={tag} className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded border ${CATEGORY_COLORS[tag] || CATEGORY_COLORS['All']}`}>
-                                {tag}
-                            </div>
-                        ))}
-                        <span className="text-[10px] text-stone-600 italic">Auto-detected</span>
-                    </div>
-                )}
+                <span className="text-[10px] text-stone-600 uppercase tracking-widest font-bold">
+                    Add tags after saving
+                </span>
             </div>
             
             <div className="flex items-center gap-3">

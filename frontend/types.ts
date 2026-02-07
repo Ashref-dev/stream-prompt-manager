@@ -22,6 +22,7 @@ export interface PromptBlockData {
 export interface TagColor {
   name: string;
   hue: number; // 0-360
+  lightness: number; // 0-100
 }
 
 export interface Stack {

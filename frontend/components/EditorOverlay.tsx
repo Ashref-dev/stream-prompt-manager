@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { PromptBlockData, Stack } from '../types';
-import { X, Trash2, Copy, Plus } from 'lucide-react';
+import { PromptBlockData, Stack, TagColor } from '../types';
+import { X, Trash2, Copy, Plus, ChevronDown, Hash } from 'lucide-react';
 import gsap from 'gsap';
-import { CATEGORY_COLORS } from '../constants';
+import { getTagColorClasses } from '../constants';
 
 interface EditorOverlayProps {
   block: PromptBlockData;
@@ -10,6 +10,8 @@ interface EditorOverlayProps {
   onUpdate: (updates: Partial<PromptBlockData>) => void;
   onDelete: () => void;
   stacks: Stack[];
+  tagColors: Map<string, TagColor>;
+  onEnsureTagColor: (tag: string) => void;
 }
 
 const EditorOverlay: React.FC<EditorOverlayProps> = ({
@@ -18,15 +20,22 @@ const EditorOverlay: React.FC<EditorOverlayProps> = ({
   onUpdate,
   onDelete,
   stacks,
+  tagColors,
+  onEnsureTagColor,
 }) => {
   const [content, setContent] = useState(block.content);
   const [tags, setTags] = useState<string[]>(block.tags || []);
   const [newTagInput, setNewTagInput] = useState('');
   const [isAddingTag, setIsAddingTag] = useState(false);
+  const [isStackMenuOpen, setIsStackMenuOpen] = useState(false);
+  const [stackOrderInput, setStackOrderInput] = useState(
+    block.stackOrder ? block.stackOrder.toString() : '',
+  );
 
   const containerRef = useRef<HTMLDivElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
   const tagInputRef = useRef<HTMLInputElement>(null);
+  const stackMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     gsap.fromTo(
@@ -47,6 +56,22 @@ const EditorOverlay: React.FC<EditorOverlayProps> = ({
     }
   }, [isAddingTag]);
 
+  useEffect(() => {
+    if (!isStackMenuOpen) return;
+    const handleClick = (event: MouseEvent) => {
+      if (!stackMenuRef.current) return;
+      if (!stackMenuRef.current.contains(event.target as Node)) {
+        setIsStackMenuOpen(false);
+      }
+    };
+    window.addEventListener('mousedown', handleClick);
+    return () => window.removeEventListener('mousedown', handleClick);
+  }, [isStackMenuOpen]);
+
+  useEffect(() => {
+    setStackOrderInput(block.stackOrder ? block.stackOrder.toString() : '');
+  }, [block.stackOrder, block.stackId]);
+
   const handleClose = () => {
     gsap.to(containerRef.current, {
       scale: 0.95,
@@ -62,10 +87,12 @@ const EditorOverlay: React.FC<EditorOverlayProps> = ({
   };
 
   const handleAddTag = () => {
-    if (newTagInput.trim() && !tags.includes(newTagInput.trim())) {
-      const updatedTags = [...tags, newTagInput.trim()];
+    const nextTag = newTagInput.trim();
+    if (nextTag && !tags.includes(nextTag)) {
+      const updatedTags = [...tags, nextTag];
       setTags(updatedTags);
       onUpdate({ tags: updatedTags });
+      onEnsureTagColor(nextTag);
       setNewTagInput('');
       setIsAddingTag(false);
     }
@@ -75,6 +102,33 @@ const EditorOverlay: React.FC<EditorOverlayProps> = ({
     const updatedTags = tags.filter((t) => t !== tagToRemove);
     setTags(updatedTags);
     onUpdate({ tags: updatedTags });
+  };
+
+  const activeStack = stacks.find((s) => s.id === block.stackId);
+  const stackLabel = activeStack ? activeStack.name : 'No Stack';
+
+  const handleSelectStack = (stackId?: string) => {
+    const nextStackId = stackId || undefined;
+    const preserveOrder =
+      nextStackId && nextStackId === block.stackId ? block.stackOrder : undefined;
+    onUpdate({
+      stackId: nextStackId,
+      stackOrder: preserveOrder,
+    });
+    if (!nextStackId || preserveOrder === undefined) setStackOrderInput('');
+    setIsStackMenuOpen(false);
+  };
+
+  const handleStackOrderChange = (value: string) => {
+    const sanitized = value.replace(/\D/g, '');
+    if (!sanitized) {
+      setStackOrderInput('');
+      onUpdate({ stackOrder: undefined });
+      return;
+    }
+    const numeric = Math.min(99, Math.max(1, parseInt(sanitized, 10)));
+    setStackOrderInput(numeric.toString());
+    onUpdate({ stackOrder: numeric });
   };
 
   return (
@@ -97,24 +151,68 @@ const EditorOverlay: React.FC<EditorOverlayProps> = ({
             </span>
 
             {/* Stack Selector */}
-            <div className='flex items-center gap-2'>
-              <span className='text-[10px] font-bold uppercase tracking-widest text-stone-600'>
-                Stack:
-              </span>
-              <select
-                value={block.stackId || ''}
-                onChange={(e) =>
-                  onUpdate({ stackId: e.target.value || undefined })
-                }
-                className='bg-[#0c0a09] border border-stone-800 rounded px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-400 focus:outline-none focus:border-stone-600'
-              >
-                <option value=''>No Stack</option>
-                {stacks.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+            <div className='flex items-center gap-4'>
+              <div className='flex items-center gap-2'>
+                <span className='text-[10px] font-bold uppercase tracking-widest text-stone-600'>
+                  Stack:
+                </span>
+                <div ref={stackMenuRef} className='relative'>
+                  <button
+                    onClick={() => setIsStackMenuOpen((prev) => !prev)}
+                    className='flex items-center gap-2 bg-[#0c0a09] border border-stone-800 rounded px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-300 hover:text-white hover:border-stone-600 transition-colors'
+                    type='button'
+                  >
+                    <span className='max-w-[140px] truncate'>
+                      {stackLabel}
+                    </span>
+                    <ChevronDown size={12} className='text-stone-500' />
+                  </button>
+                  {isStackMenuOpen && (
+                    <div className='absolute top-full left-0 mt-2 w-48 rounded-lg border border-stone-800 bg-[#111] shadow-2xl z-20 overflow-hidden'>
+                      <button
+                        onClick={() => handleSelectStack()}
+                        className='w-full text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-stone-400 hover:text-white hover:bg-stone-800 transition-colors'
+                      >
+                        No Stack
+                      </button>
+                      <div className='h-px bg-stone-800' />
+                      {stacks.map((s) => (
+                        <button
+                          key={s.id}
+                          onClick={() => handleSelectStack(s.id)}
+                          className={`w-full text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                            block.stackId === s.id
+                              ? 'bg-stone-800 text-white'
+                              : 'text-stone-400 hover:text-white hover:bg-stone-800'
+                          }`}
+                        >
+                          {s.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {block.stackId && (
+                <div className='flex items-center gap-2'>
+                  <span className='text-[10px] font-bold uppercase tracking-widest text-stone-600'>
+                    Order:
+                  </span>
+                  <div className='flex items-center gap-1 bg-[#0c0a09] border border-stone-800 rounded px-2 py-1'>
+                    <Hash size={12} className='text-stone-500' />
+                    <input
+                      value={stackOrderInput}
+                      onChange={(e) => handleStackOrderChange(e.target.value)}
+                      onBlur={() => handleStackOrderChange(stackOrderInput)}
+                      placeholder='1-99'
+                      className='w-12 bg-transparent text-[10px] font-bold uppercase tracking-wider text-stone-300 focus:outline-none placeholder:text-stone-600'
+                      inputMode='numeric'
+                      maxLength={2}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           <div className='flex items-center gap-2'>
@@ -167,7 +265,10 @@ const EditorOverlay: React.FC<EditorOverlayProps> = ({
             {tags.map((tag) => (
               <div
                 key={tag}
-                className={`flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded border text-[10px] font-bold uppercase tracking-wider ${CATEGORY_COLORS[tag] || CATEGORY_COLORS['All']}`}
+                className={`flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded border text-[10px] font-bold uppercase tracking-wider ${getTagColorClasses(
+                  tag,
+                  tagColors,
+                )}`}
               >
                 {tag}
                 <button

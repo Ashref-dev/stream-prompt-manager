@@ -1,4 +1,4 @@
-import { Template, PromptBlockData } from './types';
+import { Template, PromptBlockData, TagColor } from './types';
 import {
   User,
   Shield,
@@ -151,22 +151,42 @@ export const CATEGORY_ACTIVE_COLORS: Record<string, string> = {
 
 // ============ TAG COLOR UTILITIES ============
 
+export const DEFAULT_TAG_LIGHTNESS = 32;
+
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(Math.max(value, min), max);
+
 /**
  * Generate a unique hue using the golden angle for maximum visual separation.
  * This ensures even with many tags, colors are distinguishable.
  */
 export const generateUniqueHue = (existingHues: number[]): number => {
   const goldenAngle = 137.5;
-  let hue = (existingHues.length * goldenAngle) % 360;
-  return Math.round(hue);
+  const used = new Set(existingHues.map((h) => Math.round(h)));
+  let idx = existingHues.length;
+  let hue = Math.round((idx * goldenAngle) % 360);
+  while (used.has(hue)) {
+    idx += 1;
+    hue = Math.round((idx * goldenAngle) % 360);
+  }
+  return hue;
 };
 
 /**
  * Convert a hue (0-360) to Tailwind-compatible inline style classes.
  * Uses HSL for precise control with dark mode optimized values.
  */
-export const hueToColorClasses = (hue: number): string => {
-  return `bg-[hsl(${hue},30%,15%)] text-[hsl(${hue},70%,65%)] border-[hsl(${hue},40%,25%)]`;
+export const hueToColorClasses = (
+  hue: number,
+  lightness: number = DEFAULT_TAG_LIGHTNESS,
+  isActive: boolean = false
+): string => {
+  const baseL = clamp(lightness, 12, 85);
+  const bgL = isActive ? clamp(baseL + 8, 12, 90) : baseL;
+  const textL =
+    bgL >= 55 ? clamp(bgL - 35, 10, 35) : clamp(bgL + 45, 60, 92);
+  const borderL = isActive ? clamp(bgL - 10, 8, 80) : clamp(bgL - 6, 8, 80);
+  return `bg-[hsl(${hue},35%,${bgL}%)] text-[hsl(${hue},70%,${textL}%)] border-[hsl(${hue},45%,${borderL}%)]`;
 };
 
 /**
@@ -174,18 +194,25 @@ export const hueToColorClasses = (hue: number): string => {
  */
 export const getTagColorClasses = (
   tagName: string,
-  customColors: Map<string, number>
+  customColors: Map<string, TagColor>,
+  isActive: boolean = false
 ): string => {
   // Check if there's a custom color for this tag
   if (customColors.has(tagName)) {
-    return hueToColorClasses(customColors.get(tagName)!);
+    const color = customColors.get(tagName)!;
+    return hueToColorClasses(color.hue, color.lightness, isActive);
   }
 
   // Check built-in colors
+  if (isActive && CATEGORY_ACTIVE_COLORS[tagName]) {
+    return CATEGORY_ACTIVE_COLORS[tagName];
+  }
   if (CATEGORY_COLORS[tagName]) {
     return CATEGORY_COLORS[tagName];
   }
 
   // Return default styling for unknown tags
-  return CATEGORY_COLORS['All'];
+  return isActive && CATEGORY_ACTIVE_COLORS['All']
+    ? CATEGORY_ACTIVE_COLORS['All']
+    : CATEGORY_COLORS['All'];
 };

@@ -6,6 +6,7 @@ import {
   hueToColorClasses,
   generateUniqueHue,
   CATEGORY_COLORS,
+  DEFAULT_TAG_LIGHTNESS,
 } from '../constants';
 
 interface SettingsOverlayProps {
@@ -13,8 +14,10 @@ interface SettingsOverlayProps {
   onClose: () => void;
   allTags: string[];
   tagColors: TagColor[];
-  onUpdateTagColor: (name: string, hue: number) => void;
+  onUpdateTagColor: (name: string, hue: number, lightness: number) => void;
   onResetTagColor: (name: string) => void;
+  radiusMode: 'rounded' | 'sharp';
+  onUpdateRadiusMode: (mode: 'rounded' | 'sharp') => void;
 }
 
 const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
@@ -24,6 +27,8 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
   tagColors,
   onUpdateTagColor,
   onResetTagColor,
+  radiusMode,
+  onUpdateRadiusMode,
 }) => {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const backdropRef = React.useRef<HTMLDivElement>(null);
@@ -56,10 +61,10 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
 
   if (!isOpen) return null;
 
-  const colorMap = new Map(tagColors.map((tc) => [tc.name, tc.hue]));
+  const colorMap = new Map(tagColors.map((tc) => [tc.name, tc]));
   const existingHues = tagColors.map((tc) => tc.hue as number);
 
-  const getTagHue = (tagName: string): number | null => {
+  const getTagColor = (tagName: string): TagColor | null => {
     return colorMap.get(tagName) ?? null;
   };
 
@@ -87,10 +92,10 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
             </div>
             <div>
               <h2 className='text-xl font-bold text-white uppercase tracking-tight'>
-                Tag Architecture
+                Tag Settings
               </h2>
               <p className='text-xs text-stone-500 font-medium'>
-                Customize the visual identity of your flow.
+                Adjust tag colors and corners.
               </p>
             </div>
           </div>
@@ -108,11 +113,11 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
           <div className='flex-1 overflow-y-auto p-6 custom-scrollbar bg-[#0c0a09]'>
             <div className='grid grid-cols-2 gap-3 pb-8'>
               {allTags.map((tag) => {
-                const customHue = getTagHue(tag);
-                const hasCustomColor = customHue !== null;
+                const customColor = getTagColor(tag);
+                const hasCustomColor = customColor !== null;
                 const isSelected = selectedTag === tag;
                 const displayClasses = hasCustomColor
-                  ? hueToColorClasses(customHue)
+                  ? hueToColorClasses(customColor!.hue, customColor!.lightness)
                   : CATEGORY_COLORS[tag] || CATEGORY_COLORS['All'];
 
                 return (
@@ -157,7 +162,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
           {/* EDITOR PANEL */}
           <div className='w-72 bg-[#161616] border-l border-stone-800 p-8 flex flex-col'>
             {selectedTag ? (
-              <div className='animate-in fade-in slide-in-from-right-4 duration-300 flex flex-col h-full'>
+              <div className='animate-in fade-in slide-in-from-right-4 duration-300 flex flex-col flex-1'>
                 <div className='flex-1'>
                   <span className='text-[10px] font-bold uppercase tracking-widest text-stone-500 mb-6 block'>
                     Active Selection
@@ -166,9 +171,10 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
                     <div
                       className={`w-24 h-24 rounded-2xl border-2 mx-auto mb-4 flex items-center justify-center shadow-2xl transition-all duration-300
                                     ${
-                                      getTagHue(selectedTag) !== null
+                                      getTagColor(selectedTag) !== null
                                         ? hueToColorClasses(
-                                            getTagHue(selectedTag)!,
+                                            getTagColor(selectedTag)!.hue,
+                                            getTagColor(selectedTag)!.lightness,
                                           )
                                         : CATEGORY_COLORS[selectedTag] ||
                                           CATEGORY_COLORS['All']
@@ -205,13 +211,15 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
                           min='0'
                           max='360'
                           value={
-                            getTagHue(selectedTag) ??
+                            getTagColor(selectedTag)?.hue ??
                             generateUniqueHue(existingHues)
                           }
                           onChange={(e) =>
                             onUpdateTagColor(
                               selectedTag,
                               parseInt(e.target.value),
+                              getTagColor(selectedTag)?.lightness ??
+                                DEFAULT_TAG_LIGHTNESS,
                             )
                           }
                           className='absolute inset-0 w-full h-2 rounded-full appearance-none cursor-pointer mt-2 bg-transparent'
@@ -243,7 +251,40 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
                       </div>
                     </div>
 
-                    {getTagHue(selectedTag) !== null && (
+                    <div>
+                      <div className='flex items-center justify-between mb-3'>
+                        <span className='text-[10px] font-bold uppercase tracking-widest text-stone-400'>
+                          Lightness
+                        </span>
+                        <span className='text-xs font-mono text-stone-500'>
+                          {getTagColor(selectedTag)?.lightness ??
+                            DEFAULT_TAG_LIGHTNESS}
+                          %
+                        </span>
+                      </div>
+                      <div className='relative h-6 group'>
+                        <input
+                          type='range'
+                          min='10'
+                          max='85'
+                          value={
+                            getTagColor(selectedTag)?.lightness ??
+                            DEFAULT_TAG_LIGHTNESS
+                          }
+                          onChange={(e) =>
+                            onUpdateTagColor(
+                              selectedTag,
+                              getTagColor(selectedTag)?.hue ??
+                                generateUniqueHue(existingHues),
+                              parseInt(e.target.value),
+                            )
+                          }
+                          className='absolute inset-0 w-full h-2 rounded-full appearance-none cursor-pointer mt-2 bg-gradient-to-r from-black via-stone-400 to-white'
+                        />
+                      </div>
+                    </div>
+
+                    {getTagColor(selectedTag) !== null && (
                       <button
                         onClick={() => onResetTagColor(selectedTag)}
                         className='w-full py-3 bg-stone-900 hover:bg-red-950/20 text-stone-500 hover:text-red-500 border border-stone-800 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all'
@@ -263,29 +304,60 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
                 </div>
               </div>
             ) : (
-              <div className='flex flex-col items-center justify-center h-full text-center'>
+              <div className='flex flex-col items-center justify-center flex-1 text-center'>
                 <div className='w-12 h-12 border-2 border-stone-800 border-dashed rounded-xl mb-4 flex items-center justify-center text-stone-800'>
                   <Palette size={20} />
                 </div>
                 <p className='text-xs text-stone-600 font-medium px-4'>
-                  Select a node class from the left to adjust its chromatic
+                  Select a tab class from the left to adjust its chromatic
                   signature.
                 </p>
               </div>
             )}
+
+            <div className='pt-6 border-t border-stone-800 mt-auto'>
+              <span className='text-[10px] font-bold uppercase tracking-widest text-stone-500'>
+                Corner Radius
+              </span>
+              <div className='mt-3 grid grid-cols-2 gap-2'>
+                <button
+                  onClick={() => onUpdateRadiusMode('rounded')}
+                  className={`py-2 text-[10px] font-bold uppercase tracking-wider border rounded-md transition-all ${
+                    radiusMode === 'rounded'
+                      ? 'bg-stone-200 text-black border-stone-200'
+                      : 'bg-stone-900 text-stone-400 border-stone-800 hover:text-white hover:border-stone-600'
+                  }`}
+                >
+                  Rounded
+                </button>
+                <button
+                  onClick={() => onUpdateRadiusMode('sharp')}
+                  className={`py-2 text-[10px] font-bold uppercase tracking-wider border rounded-md transition-all ${
+                    radiusMode === 'sharp'
+                      ? 'bg-stone-200 text-black border-stone-200'
+                      : 'bg-stone-900 text-stone-400 border-stone-800 hover:text-white hover:border-stone-600'
+                  }`}
+                >
+                  Sharp
+                </button>
+              </div>
+              <p className='text-[9px] leading-relaxed text-stone-600 mt-3'>
+                Applies to buttons, cards, and panels across the UI.
+              </p>
+            </div>
           </div>
         </div>
 
         {/* FOOTER */}
         <div className='px-8 py-5 border-t border-stone-800 bg-[#161616] shrink-0 flex justify-between items-center'>
           <span className='text-[10px] font-bold text-stone-600 uppercase tracking-widest'>
-            {allTags.length} Unique Nodes Detected
+            {allTags.length} Unique Tabs Detected
           </span>
           <button
             onClick={handleClose}
             className='px-8 py-2.5 bg-stone-100 text-black rounded-lg text-sm font-bold hover:bg-white transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] active:scale-95'
           >
-            Finish Configuration
+            Done
           </button>
         </div>
       </div>

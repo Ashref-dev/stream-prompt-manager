@@ -1,5 +1,5 @@
 import React from 'react';
-import { PromptBlockData, Stack } from '../types';
+import { PromptBlockData, Stack, TagColor } from '../types';
 import PromptCard from './PromptCard';
 import { Clipboard } from 'lucide-react';
 
@@ -8,8 +8,9 @@ interface PromptGridProps {
   visibleBlockIds: Set<string>;
   mixerIds: string[];
   columnCount: number;
-  tagColors: Map<string, number>;
+  tagColors: Map<string, TagColor>;
   stacks: Stack[];
+  activeStackId: string | null;
   onFocus: (id: string) => void;
   onToggleMix: (id: string) => void;
   onAdd: () => void;
@@ -22,6 +23,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   columnCount,
   tagColors,
   stacks,
+  activeStackId,
   onFocus,
   onToggleMix,
   onAdd,
@@ -53,7 +55,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
           onClick={onAdd}
           className='text-sm font-bold text-stone-400 border-b border-stone-700 hover:border-stone-400 hover:text-stone-200 transition-colors pb-0.5'
         >
-          Create First Note
+          Create First Prompt
         </button>
       </div>
     );
@@ -91,6 +93,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
           isMixing={mixerIds.includes(block.id)}
           tagColors={tagColors}
           stackName={block.stackId ? stackMap.get(block.stackId) : undefined}
+          showStackOrder={activeStackId !== null}
           onClick={() => onFocus(block.id)}
           onToggleMix={() => onToggleMix(block.id)}
         />

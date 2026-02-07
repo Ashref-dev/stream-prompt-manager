@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, X, Layers } from 'lucide-react';
+import { Plus, X, Layers, Check } from 'lucide-react';
 import { Stack } from '../types';
 
 interface StacksBarProps {
@@ -69,7 +69,7 @@ const StacksBar: React.FC<StacksBarProps> = ({
           }
         `}
       >
-        Universal
+        All
       </button>
 
       {/* Stack Tabs */}
@@ -122,7 +122,7 @@ const StacksBar: React.FC<StacksBarProps> = ({
 
       {/* Create New Stack */}
       {isCreating ? (
-        <div className='flex items-center gap-1 shrink-0'>
+        <div className='flex items-center gap-2 shrink-0 bg-stone-900/60 border border-stone-700 px-2.5 py-1.5 rounded-lg'>
           <input
             autoFocus
             value={newStackName}
@@ -138,9 +138,16 @@ const StacksBar: React.FC<StacksBarProps> = ({
                 setNewStackName('');
               }
             }}
-            placeholder='Stack name...'
-            className='text-[11px] px-2 py-1 rounded bg-stone-800 border border-stone-600 text-white outline-none w-28 placeholder:text-stone-600'
+            placeholder='Stack name'
+            className='text-[11px] bg-transparent text-white outline-none w-28 placeholder:text-stone-500'
           />
+          <button
+            onClick={handleCreate}
+            className='p-1 rounded-md bg-stone-200 text-black hover:bg-white transition-colors'
+            title='Create Stack'
+          >
+            <Check size={12} />
+          </button>
         </div>
       ) : (
         <button
