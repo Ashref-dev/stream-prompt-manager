@@ -44,17 +44,17 @@ const PromptCard: React.FC<PromptCardProps> = ({
   return (
     <div
       className={`
-        break-inside-avoid w-full group relative bg-[#161616] border rounded-lg 
-        transition-all duration-500 ease-in-out cursor-pointer flex flex-col gap-3 overflow-hidden
+        break-inside-avoid w-full group relative bg-[var(--app-surface-2)] border rounded-lg 
+        transition-all duration-500 ease-in-out cursor-pointer flex flex-col gap-2 overflow-hidden
         ${
           isActive
-            ? 'opacity-100 scale-100 max-h-[800px] p-5 mb-6'
+            ? 'opacity-100 scale-100 max-h-[800px] p-4 mb-4'
             : 'opacity-0 scale-90 max-h-0 p-0 mb-0 border-0 pointer-events-none translate-y-4 shadow-none'
         }
         ${
           isMixing
-            ? 'border-stone-400 ring-1 ring-stone-400 shadow-xl translate-x-1'
-            : 'border-stone-800 hover:border-stone-600 hover:shadow-lg hover:-translate-y-1 hover:bg-[#1a1a1a]'
+            ? 'border-[var(--app-border-strong)] ring-1 ring-[var(--app-border-strong)] shadow-xl translate-x-1'
+            : 'border-[var(--app-border)] hover:border-[var(--app-border-strong)] hover:shadow-lg hover:-translate-y-1 hover:bg-[var(--app-surface-3)]'
         }
         ${block.isNew && isVisible ? 'animate-flash-border' : ''}
       `}
@@ -67,7 +67,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
           {showStackOrder &&
             block.stackId &&
             block.stackOrder !== undefined && (
-            <span className='text-[9px] px-2 py-0.5 rounded border bg-stone-800 text-stone-200 border-stone-600 font-bold'>
+            <span className='text-[9px] px-2 py-0.5 rounded border bg-[var(--app-surface-3)] text-[var(--app-text-strong)] border-[var(--app-border-strong)] font-bold'>
               #{block.stackOrder}
             </span>
           )}
@@ -85,7 +85,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
               </span>
             ))
           ) : (
-            <span className='text-[9px] px-2 py-0.5 rounded border border-stone-800 text-stone-600 font-bold uppercase tracking-wider'>
+            <span className='text-[9px] px-2 py-0.5 rounded border border-[var(--app-border)] text-[var(--app-text-subtle)] font-bold uppercase tracking-wider'>
               Untagged
             </span>
           )}
@@ -94,7 +94,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
         <div className='flex items-center gap-1'>
           <button
             onClick={handleCopy}
-            className='opacity-0 group-hover:opacity-100 p-1.5 text-stone-500 hover:text-white hover:bg-stone-800 rounded-md transition-all'
+            className='opacity-0 group-hover:opacity-100 p-1.5 text-[var(--app-text-subtle)] hover:text-[var(--app-text-strong)] hover:bg-[var(--app-surface-3)] rounded-md transition-all'
             title='Copy to Clipboard'
           >
             {copied ? (
@@ -109,8 +109,8 @@ const PromptCard: React.FC<PromptCardProps> = ({
             onClick={handleToggle}
             className={`p-1.5 rounded-md transition-all border flex items-center justify-center ${
               isMixing
-                ? 'bg-stone-200 text-black border-stone-200'
-                : 'text-stone-600 border-transparent hover:border-stone-600 hover:bg-stone-900 hover:text-stone-300'
+                ? 'bg-[var(--app-accent)] text-[var(--app-inverse)] border-[var(--app-accent)]'
+                : 'text-[var(--app-text-subtle)] border-transparent hover:border-[var(--app-border-strong)] hover:bg-[var(--app-surface-3)] hover:text-[var(--app-text)]'
             }`}
             title={isMixing ? 'Remove from Rack' : 'Add to Rack'}
           >
@@ -122,37 +122,39 @@ const PromptCard: React.FC<PromptCardProps> = ({
       {/* CONTENT PREVIEW */}
       <div className='relative'>
         <p
-          className={`text-sm font-mono text-stone-300 leading-relaxed line-clamp-[8] whitespace-pre-wrap font-medium ${
+          className={`text-sm font-mono text-[var(--app-text)] leading-relaxed line-clamp-[8] whitespace-pre-wrap font-medium ${
             isMixing ? 'opacity-100' : 'opacity-80'
           }`}
         >
           {block.content || (
-            <span className='text-stone-600 italic'>Empty note...</span>
+            <span className='text-[var(--app-text-subtle)] italic'>
+              Empty note...
+            </span>
           )}
         </p>
         {/* Subtle Fade for dark mode */}
-        <div className='absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-[#161616] to-transparent pointer-events-none'></div>
+        <div className='absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-[var(--app-surface-2)] to-transparent pointer-events-none'></div>
       </div>
 
       {/* FOOTER */}
-      <div className='pt-2 mt-auto flex items-center justify-between border-t border-stone-900'>
-        <div className='flex items-center gap-2'>
-          {stackName && (
-            <span className='flex items-center gap-1 text-[9px] text-stone-500'>
+      {stackName && (
+        <div className='pt-2 mt-auto flex items-center justify-between border-t border-[var(--app-border)]'>
+          <div className='flex items-center gap-2'>
+            <span className='flex items-center gap-1 text-[9px] text-[var(--app-text-subtle)]'>
               <Layers size={10} />
               {stackName}
             </span>
-          )}
+          </div>
+          <Maximize2
+            size={12}
+            className='text-[var(--app-text-subtle)] opacity-0 group-hover:opacity-100 transition-opacity'
+          />
         </div>
-        <Maximize2
-          size={12}
-          className='text-stone-600 opacity-0 group-hover:opacity-100 transition-opacity'
-        />
-      </div>
+      )}
 
       {/* Active Indicator Corner */}
       {isMixing && (
-        <div className='absolute -top-1 -right-1 w-3 h-3 bg-stone-200 rounded-full border-2 border-[#161616] shadow-sm'></div>
+        <div className='absolute -top-1 -right-1 w-3 h-3 bg-[var(--app-accent)] rounded-full border-2 border-[var(--app-surface-2)] shadow-sm'></div>
       )}
     </div>
   );

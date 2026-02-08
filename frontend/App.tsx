@@ -43,6 +43,134 @@ import {
 } from './constants';
 import * as api from './services/api';
 
+// Advanced Tag Detection System
+const detectTags = (content: string): string[] => {
+  const tags = new Set<string>();
+  const matches = (regex: RegExp) => regex.test(content);
+
+  // Python
+  if (
+    matches(/(^|\s)def\s+/i) ||
+    matches(/(^|\s)elif\s+/i) ||
+    matches(/print\s*\(/i) ||
+    matches(
+      /(^|\s)import\s+(numpy|pandas|os|sys|json|math|random|django|flask|torch|tensorflow)(\s|$)/i,
+    ) ||
+    matches(/(^|\s)from\s+\w+\s+import\s+/i) ||
+    matches(/if\s+__name__\s*==\s*['"]__main__['"]/i) ||
+    matches(/__init__/i) ||
+    matches(/self\./i) ||
+    matches(/kwargs/i) ||
+    matches(/pip\s+install/i)
+  ) {
+    tags.add('Python');
+  }
+
+  // JavaScript
+  if (
+    matches(/(^|\s)(const|let|var)\s+/i) ||
+    matches(/(^|\s)function\s+/i) ||
+    matches(/console\.(log|error|warn)/i) ||
+    matches(/=>/i) ||
+    matches(/export\s+(default|const|class|function)/i) ||
+    matches(/module\.exports/i) ||
+    matches(/npm\s+install/i) ||
+    matches(/yarn\s+add/i)
+  ) {
+    tags.add('JavaScript');
+  }
+
+  // TypeScript
+  if (
+    matches(/:\s*(string|number|boolean|any|void|unknown|never)/i) ||
+    matches(/interface\s+\w+/i) ||
+    matches(/type\s+\w+\s*=/i) ||
+    matches(/as\s+const/i) ||
+    matches(/<[A-Z][\w]*\s+[^>]*>/i)
+  ) {
+    tags.add('TypeScript');
+    tags.delete('JavaScript');
+  }
+
+  // React
+  if (
+    matches(/useState|useEffect|useMemo|useCallback|useContext|useRef/i) ||
+    matches(/className=/i) ||
+    matches(/<[A-Z]\w+/) ||
+    matches(/<\/>/i) ||
+    matches(/react/i)
+  ) {
+    tags.add('React');
+    if (
+      matches(/NextResponse/i) ||
+      matches(/getServerSideProps/i) ||
+      matches(/getStaticProps/i) ||
+      matches(/['"]use client['"]/i) ||
+      matches(/next\/[a-z]+/i)
+    ) {
+      tags.add('Next.js');
+    }
+  }
+
+  // C# / Unity
+  if (
+    matches(/public\s+class\s+/i) ||
+    matches(/private\s+void\s+/i) ||
+    matches(/using\s+System/i) ||
+    matches(/Console\.WriteLine/i)
+  ) {
+    tags.add('C#');
+  }
+  if (
+    matches(/MonoBehaviour/i) ||
+    matches(/\[SerializeField\]/i) ||
+    matches(/GameObject/i) ||
+    matches(/GetComponent/i)
+  ) {
+    tags.add('Unity');
+    tags.add('C#');
+  }
+
+  // C++ / Unreal
+  if (
+    matches(/#include\s+/i) ||
+    matches(/std::/i) ||
+    matches(/cout\s*<</i) ||
+    matches(/::/i) ||
+    matches(/nullptr/i)
+  ) {
+    tags.add('C++');
+  }
+  if (matches(/UCLASS/i) || matches(/UPROPERTY/i) || matches(/UFUNCTION/i)) {
+    tags.add('Unreal');
+    tags.add('C++');
+  }
+
+  // SQL
+  if (
+    matches(/SELECT\s+.*\s+FROM/i) ||
+    matches(/INSERT\s+INTO/i) ||
+    matches(/UPDATE\s+.*\s+SET/i) ||
+    matches(/DELETE\s+FROM/i) ||
+    matches(/CREATE\s+TABLE/i)
+  ) {
+    tags.add('SQL');
+  }
+
+  // Core categories
+  if (tags.size > 0) tags.add('Code');
+  if (matches(/(you are|act as|role|persona|simulation)/i)) tags.add('Role');
+  if (matches(/(json|markdown|xml|yaml|format|output|structure)/i))
+    tags.add('Output');
+  if (matches(/(do not|avoid|limit|constraint|never|must not|prohibit)/i))
+    tags.add('Rules');
+  if (matches(/(context|project|background|tech stack|database|environment)/i))
+    tags.add('Context');
+
+  if (tags.size === 0) tags.add('Logic');
+  return Array.from(tags);
+};
+
 const ToastContainer: React.FC<{
   toasts: ToastMessage[];
   removeToast: (id: string) => void;
@@ -52,7 +180,7 @@ const ToastContainer: React.FC<{
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className='pointer-events-auto flex items-center gap-6 px-6 py-4 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.7)] border border-stone-800 bg-[#0c0a09] text-stone-300 animate-in slide-in-from-bottom-5 fade-in duration-500 min-w-[320px] justify-between'
+          className='pointer-events-auto flex items-center gap-6 px-6 py-4 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.7)] border border-[var(--app-border)] bg-[var(--app-bg)] text-[var(--app-text)] animate-in slide-in-from-bottom-5 fade-in duration-500 min-w-[320px] justify-between'
         >
           <div className='flex items-center gap-4'>
             <div
@@ -119,6 +247,14 @@ const App: React.FC = () => {
   const [radiusMode, setRadiusMode] = useState<'rounded' | 'sharp'>(() => {
     const saved = localStorage.getItem('stream_radiusMode');
     return saved === 'sharp' ? 'sharp' : 'rounded';
+  });
+  const [themeMode, setThemeMode] = useState<'dark' | 'light'>(() => {
+    const saved = localStorage.getItem('stream_themeMode');
+    return saved === 'light' ? 'light' : 'dark';
+  });
+  const [isAutoTaggingEnabled, setIsAutoTaggingEnabled] = useState(() => {
+    const saved = localStorage.getItem('stream_autoTagging');
+    return saved === null ? false : saved === 'true';
   });
   const [isNarrowViewport, setIsNarrowViewport] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -187,8 +323,14 @@ const App: React.FC = () => {
 
   useEffect(() => {
     localStorage.setItem('stream_radiusMode', radiusMode);
+    localStorage.setItem('stream_themeMode', themeMode);
+    localStorage.setItem(
+      'stream_autoTagging',
+      isAutoTaggingEnabled ? 'true' : 'false',
+    );
     document.body.dataset.radiusMode = radiusMode;
-  }, [radiusMode]);
+    document.body.dataset.theme = themeMode;
+  }, [radiusMode, themeMode, isAutoTaggingEnabled]);
 
   useEffect(() => {
     const handleResize = () => setIsNarrowViewport(window.innerWidth < 1024);
@@ -362,12 +504,15 @@ const App: React.FC = () => {
       const firstLine = content.trim().split('\n')[0];
       const smartTitle =
         firstLine.length > 40 ? firstLine.substring(0, 40) + '...' : firstLine;
+      const autoTags = isAutoTaggingEnabled ? detectTags(content) : [];
+      autoTags.forEach((tag) => ensureTagColor(tag));
+
       const newBlock: PromptBlockData = {
         id: nanoid(),
         type: 'context',
         title: smartTitle || 'Stream Prompt',
         content: content,
-        tags: [],
+        tags: autoTags,
         isNew: true,
         isDeleting: true,
       };
@@ -398,7 +543,7 @@ const App: React.FC = () => {
         );
       }, 2000);
     },
-    [addToast, scrollToTop],
+    [addToast, scrollToTop, ensureTagColor, isAutoTaggingEnabled],
   );
 
   const handleAddTempBlock = () => {
@@ -641,10 +786,10 @@ const App: React.FC = () => {
   // Loading state
   if (isLoading) {
     return (
-      <div className='h-screen w-full bg-[#0c0a09] flex items-center justify-center'>
+      <div className='h-screen w-full bg-[var(--app-bg)] flex items-center justify-center'>
         <div className='flex flex-col items-center gap-4'>
-          <Loader2 className='w-8 h-8 text-white animate-spin' />
-          <p className='text-stone-400 text-sm font-mono'>
+          <Loader2 className='w-8 h-8 text-[var(--app-text-strong)] animate-spin' />
+          <p className='text-[var(--app-text-muted)] text-sm font-mono'>
             Connecting to database...
           </p>
         </div>
@@ -653,7 +798,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className='relative h-screen w-full bg-[#0c0a09] text-stone-200 font-sans overflow-hidden flex selection:bg-white selection:text-black'>
+    <div className='relative h-screen w-full bg-[var(--app-bg)] text-[var(--app-text)] font-sans overflow-hidden flex selection:bg-[var(--app-text-strong)] selection:text-[var(--app-inverse)]'>
       {/* Dark Technical Background Grid */}
       <div
         className='absolute inset-0 z-0 opacity-[0.03] pointer-events-none'
@@ -670,17 +815,17 @@ const App: React.FC = () => {
         }`}
       >
         {/* HEADER */}
-        <header className='h-14 flex items-center justify-between px-6 z-20 shrink-0 bg-[#0c0a09]/90 backdrop-blur-md sticky top-0 border-b border-stone-900'>
+        <header className='h-14 flex items-center justify-between px-6 z-20 shrink-0 bg-[var(--app-bg)] backdrop-blur-md sticky top-0 border-b border-[var(--app-border)]'>
           <div className='flex items-center gap-2'>
-            <Waves className='text-white' size={22} />
-            <h1 className='text-lg font-black tracking-tighter text-white uppercase hidden sm:block'>
+            <Waves className='text-[var(--app-text-strong)]' size={22} />
+            <h1 className='text-lg font-black tracking-tighter text-[var(--app-text-strong)] uppercase hidden sm:block'>
               Stream
             </h1>
           </div>
 
           {/* COLUMN CONTROLS */}
-          <div className='hidden md:flex items-center gap-1 bg-[#161616] p-1 rounded-lg border border-stone-800 mx-auto'>
-            <div className='px-2 text-stone-600'>
+          <div className='hidden md:flex items-center gap-1 bg-[var(--app-surface-2)] p-1 rounded-lg border border-[var(--app-border)] mx-auto'>
+            <div className='px-2 text-[var(--app-text-subtle)]'>
               <LayoutGrid size={14} />
             </div>
             {[1, 2, 3, 4, 5].map((num) => (
@@ -689,8 +834,8 @@ const App: React.FC = () => {
                 onClick={() => setColumnCount(num)}
                 className={`w-7 h-7 rounded text-[10px] font-bold transition-all flex items-center justify-center ${
                   columnCount === num
-                    ? 'bg-stone-200 text-black shadow-sm'
-                    : 'text-stone-500 hover:text-stone-300 hover:bg-stone-800'
+                    ? 'bg-[var(--app-text-strong)] text-[var(--app-inverse)] shadow-sm'
+                    : 'text-[var(--app-text-subtle)] hover:text-[var(--app-text)] hover:bg-[var(--app-surface-3)]'
                 }`}
                 title={`${num} Column${num > 1 ? 's' : ''}`}
               >
@@ -703,7 +848,7 @@ const App: React.FC = () => {
             {/* Settings Button */}
             <button
               onClick={() => setIsSettingsOpen(true)}
-              className='p-2 text-stone-500 hover:text-white hover:bg-stone-800 rounded-lg transition-all'
+              className='p-2 text-[var(--app-text-subtle)] hover:text-[var(--app-text-strong)] hover:bg-[var(--app-surface-3)] rounded-lg transition-all'
               title='Tag Settings'
             >
               <Settings size={18} />
@@ -713,8 +858,8 @@ const App: React.FC = () => {
               onClick={() => setIsMixerOpen(!isMixerOpen)}
               className={`flex items-center gap-3 px-4 py-2 rounded-md border transition-all font-bold text-xs uppercase tracking-wide shrink-0 ${
                 isMixerOpen
-                  ? 'bg-white text-black border-white hover:bg-stone-200'
-                  : 'bg-black text-stone-400 border-stone-800 hover:border-stone-600 hover:text-white'
+                  ? 'bg-[var(--app-accent)] text-[var(--app-inverse)] border-[var(--app-accent)] hover:bg-[var(--app-text-strong)]'
+                  : 'bg-[var(--app-inverse)] text-[var(--app-text-muted)] border-[var(--app-border)] hover:border-[var(--app-border-strong)] hover:text-[var(--app-text-strong)]'
               }`}
             >
               {isMixerOpen ? (
@@ -726,7 +871,7 @@ const App: React.FC = () => {
                 {isMixerOpen ? 'Close Rack' : 'Open Rack'}
               </span>
               {mixerIds.length > 0 && !isMixerOpen && (
-                <span className='ml-1 bg-stone-800 text-white px-1.5 py-0.5 rounded-sm'>
+                <span className='ml-1 bg-[var(--app-surface-3)] text-[var(--app-text-strong)] px-1.5 py-0.5 rounded-sm'>
                   {mixerIds.length}
                 </span>
               )}
@@ -776,7 +921,7 @@ const App: React.FC = () => {
         <div className='absolute bottom-8 left-6 z-30'>
           <button
             onClick={() => setIsCreating(true)}
-            className='flex items-center gap-3 px-6 py-3 bg-white hover:bg-stone-200 text-black rounded-full shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:scale-105 active:scale-95 transition-all group border border-white'
+            className='flex items-center gap-3 px-6 py-3 bg-[var(--app-accent)] hover:bg-[var(--app-text-strong)] text-[var(--app-inverse)] rounded-full shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:scale-105 active:scale-95 transition-all group border border-[var(--app-accent)]'
           >
             <Plus
               size={20}
@@ -791,14 +936,14 @@ const App: React.FC = () => {
         {/* FLOATING SEARCH BAR */}
         {searchQuery && (
           <div className='absolute bottom-6 left-1/2 -translate-x-1/2 z-40 animate-in slide-in-from-bottom-2 fade-in duration-300'>
-            <div className='flex items-center h-10 gap-3 bg-[#0c0a09]/80 backdrop-blur-md border border-stone-800 text-white px-4 rounded-full shadow-2xl ring-1 ring-white/5'>
-              <Search size={14} className='text-stone-500' />
-              <span className='text-sm font-mono tracking-tight text-stone-200'>
+            <div className='flex items-center h-10 gap-3 bg-[var(--app-bg)] backdrop-blur-md border border-[var(--app-border)] text-[var(--app-text-strong)] px-4 rounded-full shadow-2xl ring-1 ring-white/5'>
+              <Search size={14} className='text-[var(--app-text-subtle)]' />
+              <span className='text-sm font-mono tracking-tight text-[var(--app-text)]'>
                 {searchQuery}
               </span>
               <button
                 onClick={() => setSearchQuery('')}
-                className='ml-1 p-0.5 bg-stone-800 hover:bg-stone-700 rounded-full text-stone-400 hover:text-white transition-colors'
+                className='ml-1 p-0.5 bg-[var(--app-surface-3)] hover:bg-[var(--app-surface-2)] rounded-full text-[var(--app-text-subtle)] hover:text-[var(--app-text-strong)] transition-colors'
               >
                 <X size={12} />
               </button>
@@ -853,6 +998,10 @@ const App: React.FC = () => {
         onResetTagColor={handleResetTagColor}
         radiusMode={radiusMode}
         onUpdateRadiusMode={setRadiusMode}
+        themeMode={themeMode}
+        onUpdateThemeMode={setThemeMode}
+        isAutoTaggingEnabled={isAutoTaggingEnabled}
+        onToggleAutoTagging={setIsAutoTaggingEnabled}
       />
 
       <ToastContainer

@@ -46,16 +46,16 @@ const StacksBar: React.FC<StacksBarProps> = ({
   };
 
   return (
-    <div className='flex items-center gap-2 px-6 py-2 bg-[#0c0a09] border-b border-stone-900 overflow-x-auto custom-scrollbar shrink-0'>
+    <div className='flex items-center gap-2 px-6 py-2 bg-[var(--app-bg)] border-b border-[var(--app-border)] overflow-x-auto custom-scrollbar shrink-0'>
       {/* Stacks Label */}
-      <div className='flex items-center gap-1.5 text-stone-600 shrink-0'>
+      <div className='flex items-center gap-1.5 text-[var(--app-text-subtle)] shrink-0'>
         <Layers size={14} />
         <span className='text-[10px] font-bold uppercase tracking-widest'>
           Stacks
         </span>
       </div>
 
-      <div className='w-px h-4 bg-stone-800 shrink-0' />
+      <div className='w-px h-4 bg-[var(--app-border)] shrink-0' />
 
       {/* All Prompts Tab */}
       <button
@@ -64,15 +64,15 @@ const StacksBar: React.FC<StacksBarProps> = ({
           text-[10px] px-4 py-2 rounded-lg font-black uppercase tracking-widest transition-all whitespace-nowrap shrink-0 border
           ${
             activeStackId === null
-              ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.2)] scale-105'
-              : 'text-stone-500 border-stone-900 hover:text-white hover:bg-stone-900'
+              ? 'bg-[var(--app-accent)] text-[var(--app-inverse)] border-[var(--app-accent)] shadow-[0_0_15px_rgba(255,255,255,0.2)] scale-105'
+              : 'text-[var(--app-text-subtle)] border-[var(--app-border)] hover:text-[var(--app-text-strong)] hover:bg-[var(--app-surface-3)]'
           }
         `}
       >
         All
       </button>
 
-      {/* Stack Tabs */}
+      {/* Stacks */}
       {stacks.map((stack) => (
         <div key={stack.id} className='relative group shrink-0'>
           {editingId === stack.id ? (
@@ -85,7 +85,7 @@ const StacksBar: React.FC<StacksBarProps> = ({
                 if (e.key === 'Enter') handleSaveEdit();
                 if (e.key === 'Escape') setEditingId(null);
               }}
-              className='text-[10px] px-4 py-2 rounded-lg font-black uppercase tracking-widest bg-stone-900 border border-stone-700 text-white outline-none w-32'
+              className='text-[10px] px-4 py-2 rounded-lg font-black uppercase tracking-widest bg-[var(--app-surface-3)] border border-[var(--app-border-strong)] text-[var(--app-text-strong)] outline-none w-32'
             />
           ) : (
             <button
@@ -95,8 +95,8 @@ const StacksBar: React.FC<StacksBarProps> = ({
                 text-[10px] px-4 py-2 rounded-lg font-black uppercase tracking-widest transition-all whitespace-nowrap border
                 ${
                   activeStackId === stack.id
-                    ? 'bg-stone-200 text-black border-stone-200 shadow-xl scale-105'
-                    : 'text-stone-500 border-stone-900 hover:border-stone-700 hover:text-stone-300'
+                    ? 'bg-[var(--app-text-strong)] text-[var(--app-inverse)] border-[var(--app-text-strong)] shadow-xl scale-105'
+                    : 'text-[var(--app-text-subtle)] border-[var(--app-border)] hover:border-[var(--app-border-strong)] hover:text-[var(--app-text)]'
                 }
               `}
             >
@@ -122,7 +122,7 @@ const StacksBar: React.FC<StacksBarProps> = ({
 
       {/* Create New Stack */}
       {isCreating ? (
-        <div className='flex items-center gap-2 shrink-0 bg-stone-900/60 border border-stone-700 px-2.5 py-1.5 rounded-lg'>
+        <div className='flex items-center gap-2 shrink-0 bg-[var(--app-surface-2)] border border-[var(--app-border)] px-2.5 py-1.5 rounded-lg'>
           <input
             autoFocus
             value={newStackName}
@@ -139,11 +139,11 @@ const StacksBar: React.FC<StacksBarProps> = ({
               }
             }}
             placeholder='Stack name'
-            className='text-[11px] bg-transparent text-white outline-none w-28 placeholder:text-stone-500'
+            className='text-[11px] bg-transparent text-[var(--app-text-strong)] outline-none w-28 placeholder:text-[var(--app-text-subtle)]'
           />
           <button
             onClick={handleCreate}
-            className='p-1 rounded-md bg-stone-200 text-black hover:bg-white transition-colors'
+            className='p-1 rounded-md bg-[var(--app-accent)] text-[var(--app-inverse)] hover:bg-[var(--app-text-strong)] transition-colors'
             title='Create Stack'
           >
             <Check size={12} />
@@ -152,7 +152,7 @@ const StacksBar: React.FC<StacksBarProps> = ({
       ) : (
         <button
           onClick={() => setIsCreating(true)}
-          className='flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-stone-500 hover:text-white px-2 py-1 rounded border border-dashed border-stone-700 hover:border-stone-500 transition-all shrink-0'
+          className='flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[var(--app-text-subtle)] hover:text-[var(--app-text-strong)] px-2 py-1 rounded border border-dashed border-[var(--app-border-strong)] hover:border-[var(--app-border-strong)] transition-all shrink-0'
         >
           <Plus size={12} />
           New Stack

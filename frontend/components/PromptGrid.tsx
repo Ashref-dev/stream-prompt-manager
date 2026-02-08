@@ -38,22 +38,22 @@ const PromptGrid: React.FC<PromptGridProps> = ({
         className='h-full flex flex-col items-center justify-center text-center opacity-0 animate-in fade-in duration-700 fill-mode-forwards'
         style={{ minHeight: '60vh' }}
       >
-        <div className='w-16 h-16 bg-stone-900 border border-stone-800 rounded-2xl flex items-center justify-center mb-6 text-stone-600'>
+        <div className='w-16 h-16 bg-[var(--app-surface-3)] border border-[var(--app-border)] rounded-2xl flex items-center justify-center mb-6 text-[var(--app-text-subtle)]'>
           <Clipboard size={32} />
         </div>
-        <h2 className='text-3xl font-serif font-medium text-stone-300 mb-3'>
+        <h2 className='text-3xl font-serif font-medium text-[var(--app-text)] mb-3'>
           Canvas Empty
         </h2>
-        <p className='text-stone-600 max-w-sm leading-relaxed mb-8'>
+        <p className='text-[var(--app-text-subtle)] max-w-sm leading-relaxed mb-8'>
           Paste text directly (
-          <code className='bg-stone-800 px-1 py-0.5 rounded text-stone-400 font-mono text-xs font-bold'>
+          <code className='bg-[var(--app-surface-3)] px-1 py-0.5 rounded text-[var(--app-text-muted)] font-mono text-xs font-bold'>
             Cmd+V
           </code>
           ) or click below.
         </p>
         <button
           onClick={onAdd}
-          className='text-sm font-bold text-stone-400 border-b border-stone-700 hover:border-stone-400 hover:text-stone-200 transition-colors pb-0.5'
+          className='text-sm font-bold text-[var(--app-text-muted)] border-b border-[var(--app-border-strong)] hover:border-[var(--app-border-strong)] hover:text-[var(--app-text)] transition-colors pb-0.5'
         >
           Create First Prompt
         </button>

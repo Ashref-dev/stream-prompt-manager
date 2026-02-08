@@ -57,15 +57,15 @@ const QuickCreator: React.FC<QuickCreatorProps> = ({ isOpen, onClose, onSubmit }
       {/* Modal */}
       <div 
         ref={containerRef}
-        className="relative w-full max-w-2xl bg-[#111] border border-stone-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+        className="relative w-full max-w-2xl bg-[var(--app-surface)] border border-[var(--app-border)] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-800 bg-[#161616]">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <Sparkles size={16} className="text-stone-400" />
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--app-border)] bg-[var(--app-surface-2)]">
+            <h2 className="text-lg font-bold text-[var(--app-text-strong)] flex items-center gap-2">
+                <Sparkles size={16} className="text-[var(--app-text-subtle)]" />
                 Quick Prompt
             </h2>
-            <button onClick={onClose} className="text-stone-500 hover:text-white p-1 rounded-md transition-colors">
+            <button onClick={onClose} className="text-[var(--app-text-subtle)] hover:text-[var(--app-text-strong)] p-1 rounded-md transition-colors">
                 <X size={20} />
             </button>
         </div>
@@ -77,24 +77,24 @@ const QuickCreator: React.FC<QuickCreatorProps> = ({ isOpen, onClose, onSubmit }
             onChange={(e) => setContent(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Type your instruction, context, or persona here..."
-            className="w-full h-64 p-8 text-xl font-mono text-stone-300 placeholder:text-stone-700 focus:outline-none resize-none leading-relaxed bg-[#111]"
+            className="w-full h-64 p-8 text-xl font-mono text-[var(--app-text)] placeholder:text-[var(--app-text-subtle)] focus:outline-none resize-none leading-relaxed bg-[var(--app-surface)]"
             spellCheck={false}
         />
 
         {/* Footer / Actions */}
-        <div className="px-6 py-4 bg-[#161616] border-t border-stone-800 flex items-center justify-between">
+        <div className="px-6 py-4 bg-[var(--app-surface-2)] border-t border-[var(--app-border)] flex items-center justify-between">
             <div className="flex items-center gap-3">
-                <span className="text-[10px] text-stone-600 uppercase tracking-widest font-bold">
+                <span className="text-[10px] text-[var(--app-text-subtle)] uppercase tracking-widest font-bold">
                     Add tags after saving
                 </span>
             </div>
             
             <div className="flex items-center gap-3">
-                <span className="text-xs text-stone-500 hidden sm:inline-block">Cmd + Enter to save</span>
+                <span className="text-xs text-[var(--app-text-subtle)] hidden sm:inline-block">Cmd + Enter to save</span>
                 <button 
                     onClick={handleSubmit}
                     disabled={!content.trim()}
-                    className="flex items-center gap-2 px-6 py-2 bg-stone-200 text-black rounded-lg font-medium hover:bg-white transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-[0_0_15px_rgba(255,255,255,0.2)]"
+                    className="flex items-center gap-2 px-6 py-2 bg-[var(--app-accent)] text-[var(--app-inverse)] rounded-lg font-medium hover:bg-[var(--app-text-strong)] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-[0_0_15px_rgba(255,255,255,0.2)]"
                 >
                     Add to Stream <CornerDownLeft size={16} />
                 </button>

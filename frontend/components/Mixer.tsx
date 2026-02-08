@@ -87,10 +87,10 @@ const SortableMixerItem = React.memo(
         relative group flex items-stretch gap-0 rounded-md overflow-hidden select-none border transition-all
         ${
           isDragging
-            ? 'border-stone-500 bg-[#252525] shadow-2xl scale-[1.02] z-50 ring-1 ring-white/10'
+            ? 'border-[var(--app-border-strong)] bg-[var(--app-surface-3)] shadow-2xl scale-[1.02] z-50 ring-1 ring-white/10'
             : isTemp
-              ? 'border-stone-900 bg-black hover:border-stone-800' // Temp Styling: Darker than normal, subtle border
-              : 'border-stone-800 bg-[#1c1c1c] hover:border-stone-600 hover:bg-[#222222]' // Standard Styling
+              ? 'border-[var(--app-border)] bg-[var(--app-inverse)] hover:border-[var(--app-border-strong)]' // Temp Styling
+              : 'border-[var(--app-border)] bg-[var(--app-surface-4)] hover:border-[var(--app-border-strong)] hover:bg-[var(--app-surface-3)]' // Standard Styling
         }
       `}
       >
@@ -101,8 +101,8 @@ const SortableMixerItem = React.memo(
           className={`w-10 border-r flex items-center justify-center cursor-grab active:cursor-grabbing touch-none transition-colors
             ${
               isTemp
-                ? 'bg-[#050505] border-stone-900'
-                : 'bg-[#111111] border-stone-800 hover:bg-stone-800'
+                ? 'bg-[var(--app-inverse)] border-[var(--app-border)]'
+                : 'bg-[var(--app-surface)] border-[var(--app-border)] hover:bg-[var(--app-surface-3)]'
             }
         `}
         >
@@ -119,7 +119,7 @@ const SortableMixerItem = React.memo(
             <div className='flex items-center gap-2'>
               <span
                 className={`text-[10px] font-mono font-bold tracking-tight ${
-                  isTemp ? 'text-stone-600' : 'text-stone-600'
+                  isTemp ? 'text-[var(--app-text-subtle)]' : 'text-[var(--app-text-subtle)]'
                 }`}
               >
                 {isTemp ? 'STUB' : `PROMPT 0${index + 1}`}
@@ -139,7 +139,7 @@ const SortableMixerItem = React.memo(
                 e.stopPropagation();
                 onRemove(block.id);
               }}
-              className='text-stone-500 hover:text-red-500 transition-colors p-1'
+              className='text-[var(--app-text-subtle)] hover:text-red-500 transition-colors p-1'
               title={isTemp ? 'Delete Stub' : 'Remove Prompt'}
             >
               <X size={12} />
@@ -153,12 +153,12 @@ const SortableMixerItem = React.memo(
                 value={block.content}
                 onChange={handleTextChange}
                 placeholder='Type temporary instruction...'
-                className='w-full bg-transparent text-[11px] font-mono text-stone-300 font-medium resize-none focus:outline-none placeholder:text-stone-700 overflow-hidden leading-tight'
+                className='w-full bg-transparent text-[11px] font-mono text-[var(--app-text)] font-medium resize-none focus:outline-none placeholder:text-[var(--app-text-subtle)] overflow-hidden leading-tight'
                 rows={4}
                 spellCheck={false}
               />
             ) : (
-              <p className='text-[11px] font-mono text-stone-300 font-medium leading-relaxed tracking-tight cursor-text select-text pointer-events-auto whitespace-pre-wrap'>
+              <p className='text-[11px] font-mono text-[var(--app-text)] font-medium leading-relaxed tracking-tight cursor-text select-text pointer-events-auto whitespace-pre-wrap'>
                 {block.content}
               </p>
             )}
@@ -239,7 +239,7 @@ const Mixer: React.FC<MixerProps> = ({
     <div
       className={`
       fixed lg:absolute top-0 right-0 h-full w-[85vw] lg:w-[420px] z-50 
-      transform transition-all duration-300 ease-out bg-[#161616] text-stone-300 flex flex-col font-sans border-l border-stone-800
+      transform transition-all duration-300 ease-out bg-[var(--app-surface-2)] text-[var(--app-text)] flex flex-col font-sans border-l border-[var(--app-border)]
       ${isOpen ? 'translate-x-0' : 'translate-x-full'}
       ${
         isOverlay
@@ -249,7 +249,7 @@ const Mixer: React.FC<MixerProps> = ({
     `}
     >
       {/* RACK HEADER - Exact Card Grey (#161616) */}
-      <div className='h-16 px-6 border-b border-stone-800 flex items-center justify-between shrink-0 bg-[#161616]'>
+      <div className='h-16 px-6 border-b border-[var(--app-border)] flex items-center justify-between shrink-0 bg-[var(--app-surface-2)]'>
         <div className='flex items-center gap-3'>
           <button
             onClick={onClose}
@@ -260,23 +260,27 @@ const Mixer: React.FC<MixerProps> = ({
           </button>
           <Server
             size={18}
-            className={blocks.length > 0 ? 'text-white' : 'text-stone-700'}
+            className={
+              blocks.length > 0
+                ? 'text-[var(--app-text-strong)]'
+                : 'text-[var(--app-text-subtle)]'
+            }
           />
-          <h2 className='text-sm font-bold text-stone-200 uppercase tracking-widest'>
+          <h2 className='text-sm font-bold text-[var(--app-text)] uppercase tracking-widest'>
             Rack
           </h2>
         </div>
         <div className='flex items-center gap-2'>
           <button
             onClick={onCreateTemp}
-            className='flex items-center gap-1.5 px-3 py-1.5 bg-black hover:bg-[#0a0a0a] text-stone-500 hover:text-stone-300 hover:border-stone-700 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors border border-stone-900'
+            className='flex items-center gap-1.5 px-3 py-1.5 bg-[var(--app-inverse)] hover:bg-[var(--app-surface-3)] text-[var(--app-text-subtle)] hover:text-[var(--app-text)] hover:border-[var(--app-border-strong)] rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors border border-[var(--app-border)]'
           >
             <Plus size={10} /> Stub
           </button>
-          <div className='w-px h-4 bg-stone-800 mx-1'></div>
+          <div className='w-px h-4 bg-[var(--app-border)] mx-1'></div>
           <button
             onClick={() => setMixerIds([])}
-            className='p-2 text-stone-600 hover:text-red-500 transition-colors'
+            className='p-2 text-[var(--app-text-subtle)] hover:text-red-500 transition-colors'
             title='Wipe Rack'
           >
             <Trash2 size={14} />
@@ -285,14 +289,14 @@ const Mixer: React.FC<MixerProps> = ({
       </div>
 
       {/* COMPONENT BAY - Darker core area for depth */}
-      <div className='flex-1 overflow-y-auto p-4 custom-scrollbar bg-[#0f0f0f]'>
+      <div className='flex-1 overflow-y-auto p-4 custom-scrollbar bg-[var(--app-surface-4)]'>
         {blocks.length === 0 ? (
           <div className='h-full flex flex-col items-center justify-center text-center opacity-20 px-8'>
-            <Disc size={40} className='text-stone-800 mb-4 animate-pulse' />
-            <p className='text-[10px] font-bold uppercase tracking-[0.2em] text-stone-700'>
+            <Disc size={40} className='text-[var(--app-border-strong)] mb-4 animate-pulse' />
+            <p className='text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--app-text-subtle)]'>
               Rack Standby
             </p>
-            <p className='text-[10px] text-stone-800 mt-2'>
+            <p className='text-[10px] text-[var(--app-text-subtle)] mt-2'>
               Add prompts to activate stream.
             </p>
           </div>
@@ -324,29 +328,29 @@ const Mixer: React.FC<MixerProps> = ({
       </div>
 
       {/* CONTROL UNIT - Card Grey (#161616) */}
-      <div className='p-6 bg-[#161616] border-t border-stone-800 shrink-0 space-y-4 shadow-[0_-20px_50px_rgba(0,0,0,0.7)]'>
+      <div className='p-6 bg-[var(--app-surface-2)] border-t border-[var(--app-border)] shrink-0 space-y-4 shadow-[0_-20px_50px_rgba(0,0,0,0.7)]'>
         {blocks.length > 0 && (
           <div className='relative'>
             <button
               onClick={() => setIsMoveMenuOpen(!isMoveMenuOpen)}
-              className='w-full py-2.5 bg-stone-900 hover:bg-stone-800 text-stone-400 hover:text-white border border-stone-800 rounded-md text-[10px] font-bold uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2'
+              className='w-full py-2.5 bg-[var(--app-surface-3)] hover:bg-[var(--app-surface-2)] text-[var(--app-text-subtle)] hover:text-[var(--app-text-strong)] border border-[var(--app-border)] rounded-md text-[10px] font-bold uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2'
             >
               <GitMerge size={12} />
               Move Mounted to Stack
             </button>
 
             {isMoveMenuOpen && (
-              <div className='absolute bottom-full left-0 right-0 mb-2 p-1 bg-[#1c1c1c] border border-stone-800 rounded-lg shadow-2xl z-[60] flex flex-col'>
+              <div className='absolute bottom-full left-0 right-0 mb-2 p-1 bg-[var(--app-surface-4)] border border-[var(--app-border)] rounded-lg shadow-2xl z-[60] flex flex-col'>
                 <button
                   onClick={() => {
                     onMoveToStack(null);
                     setIsMoveMenuOpen(false);
                   }}
-                  className='p-2 text-left text-[10px] font-bold uppercase text-stone-400 hover:text-white hover:bg-stone-800 rounded transition-colors'
+                  className='p-2 text-left text-[10px] font-bold uppercase text-[var(--app-text-muted)] hover:text-[var(--app-text-strong)] hover:bg-[var(--app-surface-3)] rounded transition-colors'
                 >
                   No Stack (Remove)
                 </button>
-                <div className='h-px bg-stone-800 my-1' />
+                <div className='h-px bg-[var(--app-border)] my-1' />
                 {stacks.map((s) => (
                   <button
                     key={s.id}
@@ -354,7 +358,7 @@ const Mixer: React.FC<MixerProps> = ({
                       onMoveToStack(s.id);
                       setIsMoveMenuOpen(false);
                     }}
-                    className='p-2 text-left text-[10px] font-bold uppercase text-stone-400 hover:text-white hover:bg-stone-800 rounded transition-colors'
+                    className='p-2 text-left text-[10px] font-bold uppercase text-[var(--app-text-muted)] hover:text-[var(--app-text-strong)] hover:bg-[var(--app-surface-3)] rounded transition-colors'
                   >
                     {s.name}
                   </button>

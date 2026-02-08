@@ -141,49 +141,49 @@ const EditorOverlay: React.FC<EditorOverlayProps> = ({
 
       <div
         ref={containerRef}
-        className='relative w-full max-w-5xl h-full bg-[#111] rounded-xl overflow-hidden flex flex-col shadow-2xl border border-stone-800'
+        className='relative w-full max-w-5xl h-full bg-[var(--app-surface)] rounded-xl overflow-hidden flex flex-col shadow-2xl border border-[var(--app-border)]'
       >
         {/* HEADER */}
-        <div className='flex items-center justify-between px-8 py-5 border-b border-stone-800 bg-[#161616]'>
+        <div className='flex items-center justify-between px-8 py-5 border-b border-[var(--app-border)] bg-[var(--app-surface-2)]'>
           <div className='flex items-center gap-6'>
-            <span className='text-xs text-stone-500 font-mono hidden sm:inline-block'>
+            <span className='text-xs text-[var(--app-text-subtle)] font-mono hidden sm:inline-block'>
               ID: {block.id}
             </span>
 
             {/* Stack Selector */}
             <div className='flex items-center gap-4'>
               <div className='flex items-center gap-2'>
-                <span className='text-[10px] font-bold uppercase tracking-widest text-stone-600'>
+                <span className='text-[10px] font-bold uppercase tracking-widest text-[var(--app-text-subtle)]'>
                   Stack:
                 </span>
                 <div ref={stackMenuRef} className='relative'>
                   <button
                     onClick={() => setIsStackMenuOpen((prev) => !prev)}
-                    className='flex items-center gap-2 bg-[#0c0a09] border border-stone-800 rounded px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-300 hover:text-white hover:border-stone-600 transition-colors'
+                    className='flex items-center gap-2 bg-[var(--app-bg)] border border-[var(--app-border)] rounded px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--app-text)] hover:text-[var(--app-text-strong)] hover:border-[var(--app-border-strong)] transition-colors'
                     type='button'
                   >
                     <span className='max-w-[140px] truncate'>
                       {stackLabel}
                     </span>
-                    <ChevronDown size={12} className='text-stone-500' />
+                    <ChevronDown size={12} className='text-[var(--app-text-subtle)]' />
                   </button>
                   {isStackMenuOpen && (
-                    <div className='absolute top-full left-0 mt-2 w-48 rounded-lg border border-stone-800 bg-[#111] shadow-2xl z-20 overflow-hidden'>
+                    <div className='absolute top-full left-0 mt-2 w-48 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] shadow-2xl z-20 overflow-hidden'>
                       <button
                         onClick={() => handleSelectStack()}
-                        className='w-full text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-stone-400 hover:text-white hover:bg-stone-800 transition-colors'
+                        className='w-full text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-[var(--app-text-muted)] hover:text-[var(--app-text-strong)] hover:bg-[var(--app-surface-3)] transition-colors'
                       >
                         No Stack
                       </button>
-                      <div className='h-px bg-stone-800' />
+                      <div className='h-px bg-[var(--app-border)]' />
                       {stacks.map((s) => (
                         <button
                           key={s.id}
                           onClick={() => handleSelectStack(s.id)}
                           className={`w-full text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors ${
                             block.stackId === s.id
-                              ? 'bg-stone-800 text-white'
-                              : 'text-stone-400 hover:text-white hover:bg-stone-800'
+                              ? 'bg-[var(--app-surface-3)] text-[var(--app-text-strong)]'
+                              : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-strong)] hover:bg-[var(--app-surface-3)]'
                           }`}
                         >
                           {s.name}
@@ -196,17 +196,17 @@ const EditorOverlay: React.FC<EditorOverlayProps> = ({
 
               {block.stackId && (
                 <div className='flex items-center gap-2'>
-                  <span className='text-[10px] font-bold uppercase tracking-widest text-stone-600'>
+                  <span className='text-[10px] font-bold uppercase tracking-widest text-[var(--app-text-subtle)]'>
                     Order:
                   </span>
-                  <div className='flex items-center gap-1 bg-[#0c0a09] border border-stone-800 rounded px-2 py-1'>
-                    <Hash size={12} className='text-stone-500' />
+                  <div className='flex items-center gap-1 bg-[var(--app-bg)] border border-[var(--app-border)] rounded px-2 py-1'>
+                    <Hash size={12} className='text-[var(--app-text-subtle)]' />
                     <input
                       value={stackOrderInput}
                       onChange={(e) => handleStackOrderChange(e.target.value)}
                       onBlur={() => handleStackOrderChange(stackOrderInput)}
                       placeholder='1-99'
-                      className='w-12 bg-transparent text-[10px] font-bold uppercase tracking-wider text-stone-300 focus:outline-none placeholder:text-stone-600'
+                      className='w-12 bg-transparent text-[10px] font-bold uppercase tracking-wider text-[var(--app-text)] focus:outline-none placeholder:text-[var(--app-text-subtle)]'
                       inputMode='numeric'
                       maxLength={2}
                     />
@@ -218,7 +218,7 @@ const EditorOverlay: React.FC<EditorOverlayProps> = ({
           <div className='flex items-center gap-2'>
             <button
               onClick={handleCopy}
-              className='p-2 text-stone-500 hover:text-white transition-colors rounded-lg hover:bg-stone-800'
+              className='p-2 text-[var(--app-text-subtle)] hover:text-[var(--app-text-strong)] transition-colors rounded-lg hover:bg-[var(--app-surface-3)]'
               title='Copy'
             >
               <Copy size={20} />
@@ -228,15 +228,15 @@ const EditorOverlay: React.FC<EditorOverlayProps> = ({
                 onDelete();
                 handleClose();
               }}
-              className='p-2 text-stone-500 hover:text-red-500 transition-colors rounded-lg hover:bg-red-950/20'
+              className='p-2 text-[var(--app-text-subtle)] hover:text-red-500 transition-colors rounded-lg hover:bg-red-950/20'
               title='Delete'
             >
               <Trash2 size={20} />
             </button>
-            <div className='w-px h-6 bg-stone-800 mx-2'></div>
+            <div className='w-px h-6 bg-[var(--app-border)] mx-2'></div>
             <button
               onClick={handleClose}
-              className='p-2 text-stone-900 bg-stone-200 hover:bg-white rounded-lg transition-colors'
+              className='p-2 text-[var(--app-inverse)] bg-[var(--app-accent)] hover:bg-[var(--app-text-strong)] rounded-lg transition-colors'
             >
               <X size={20} />
             </button>
@@ -244,7 +244,7 @@ const EditorOverlay: React.FC<EditorOverlayProps> = ({
         </div>
 
         {/* EDITOR */}
-        <div className='flex-1 flex flex-col overflow-hidden bg-[#111]'>
+        <div className='flex-1 flex flex-col overflow-hidden bg-[var(--app-surface)]'>
           <textarea
             autoFocus
             value={content}
@@ -252,14 +252,14 @@ const EditorOverlay: React.FC<EditorOverlayProps> = ({
               setContent(e.target.value);
               onUpdate({ content: e.target.value });
             }}
-            className='flex-1 w-full bg-transparent p-8 lg:p-12 text-lg lg:text-xl font-mono text-stone-300 leading-relaxed focus:outline-none resize-none custom-scrollbar placeholder:text-stone-700'
+            className='flex-1 w-full bg-transparent p-8 lg:p-12 text-lg lg:text-xl font-mono text-[var(--app-text)] leading-relaxed focus:outline-none resize-none custom-scrollbar placeholder:text-[var(--app-text-subtle)]'
             spellCheck={false}
             placeholder='Start typing...'
           />
         </div>
 
         {/* FOOTER & TAGS */}
-        <div className='px-8 py-4 border-t border-stone-800 bg-[#161616] flex flex-col sm:flex-row items-center justify-between shrink-0 gap-4'>
+        <div className='px-8 py-4 border-t border-[var(--app-border)] bg-[var(--app-surface-2)] flex flex-col sm:flex-row items-center justify-between shrink-0 gap-4'>
           {/* Tag List */}
           <div className='flex items-center flex-wrap gap-2 w-full sm:w-auto'>
             {tags.map((tag) => (
@@ -291,25 +291,25 @@ const EditorOverlay: React.FC<EditorOverlayProps> = ({
                     if (!newTagInput) setIsAddingTag(false);
                     else handleAddTag();
                   }}
-                  className='bg-stone-900 border border-stone-700 rounded px-2 py-1 text-xs text-white outline-none focus:border-stone-500 w-24'
+                  className='bg-[var(--app-surface-3)] border border-[var(--app-border-strong)] rounded px-2 py-1 text-xs text-[var(--app-text-strong)] outline-none focus:border-[var(--app-border-strong)] w-24'
                   placeholder='Tag name...'
                 />
               </div>
             ) : (
               <button
                 onClick={() => setIsAddingTag(true)}
-                className='flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-stone-500 hover:text-white border border-dashed border-stone-700 hover:border-stone-500 px-2 py-1 rounded transition-all'
+                className='flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[var(--app-text-subtle)] hover:text-[var(--app-text-strong)] border border-dashed border-[var(--app-border-strong)] hover:border-[var(--app-border-strong)] px-2 py-1 rounded transition-all'
               >
                 <Plus size={12} /> Add Tag
               </button>
             )}
           </div>
 
-          <div className='flex items-center gap-6 text-stone-500 self-end sm:self-auto'>
+          <div className='flex items-center gap-6 text-[var(--app-text-subtle)] self-end sm:self-auto'>
             <span className='text-xs font-mono'>{content.length} chars</span>
             <button
               onClick={handleClose}
-              className='px-6 py-2 bg-stone-200 text-black rounded-lg text-sm font-bold hover:bg-white transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)]'
+              className='px-6 py-2 bg-[var(--app-accent)] text-[var(--app-inverse)] rounded-lg text-sm font-bold hover:bg-[var(--app-text-strong)] transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)]'
             >
               Done
             </button>

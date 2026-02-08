@@ -200,7 +200,11 @@ export const getTagColorClasses = (
   // Check if there's a custom color for this tag
   if (customColors.has(tagName)) {
     const color = customColors.get(tagName)!;
-    return hueToColorClasses(color.hue, color.lightness, isActive);
+    return hueToColorClasses(
+      color.hue,
+      color.lightness ?? DEFAULT_TAG_LIGHTNESS,
+      isActive,
+    );
   }
 
   // Check built-in colors
