@@ -46,7 +46,7 @@ const StacksBar: React.FC<StacksBarProps> = ({
   };
 
   return (
-    <div className='flex items-center gap-2 px-6 py-2 bg-[var(--app-bg)] border-b border-[var(--app-border)] overflow-x-auto custom-scrollbar shrink-0'>
+    <div className='flex min-w-0 items-center gap-2 px-4 sm:px-6 py-2 bg-[var(--app-bg)] border-b border-[var(--app-border)] overflow-x-auto custom-scrollbar shrink-0'>
       {/* Stacks Label */}
       <div className='flex items-center gap-1.5 text-[var(--app-text-subtle)] shrink-0'>
         <Layers size={14} />

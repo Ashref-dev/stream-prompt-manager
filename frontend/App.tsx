@@ -798,7 +798,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className='relative h-screen w-full bg-[var(--app-bg)] text-[var(--app-text)] font-sans overflow-hidden flex selection:bg-[var(--app-text-strong)] selection:text-[var(--app-inverse)]'>
+    <div className='relative h-screen w-full max-w-full bg-[var(--app-bg)] text-[var(--app-text)] font-sans overflow-hidden flex selection:bg-[var(--app-text-strong)] selection:text-[var(--app-inverse)]'>
       {/* Dark Technical Background Grid */}
       <div
         className='absolute inset-0 z-0 opacity-[0.03] pointer-events-none'
@@ -810,16 +810,16 @@ const App: React.FC = () => {
 
       {/* LEFT: MAIN STAGE */}
       <div
-        className={`flex-1 flex flex-col relative z-10 transition-all duration-300 ease-out ${
+        className={`flex-1 min-w-0 flex flex-col relative z-10 transition-all duration-300 ease-out ${
           isMixerOpen && columnCount <= 3 ? 'lg:mr-[420px]' : ''
         }`}
       >
         {/* HEADER */}
-        <header className='h-14 flex items-center justify-between px-6 z-20 shrink-0 bg-[var(--app-bg)] backdrop-blur-md sticky top-0 border-b border-[var(--app-border)]'>
-          <div className='flex items-center gap-2'>
+        <header className='h-14 flex min-w-0 items-center justify-between px-4 sm:px-6 z-20 shrink-0 bg-[var(--app-bg)] backdrop-blur-md sticky top-0 border-b border-[var(--app-border)]'>
+          <div className='flex min-w-0 items-center gap-2'>
             <Waves className='text-[var(--app-text-strong)]' size={22} />
-            <h1 className='text-lg font-black tracking-tighter text-[var(--app-text-strong)] uppercase hidden sm:block'>
-              Stream
+            <h1 className='text-sm sm:text-base lg:text-lg font-brand font-semibold tracking-tight text-[var(--app-text-strong)] whitespace-nowrap'>
+              prompts.ashref.tn
             </h1>
           </div>
 
@@ -844,7 +844,7 @@ const App: React.FC = () => {
             ))}
           </div>
 
-          <div className='flex items-center gap-2'>
+          <div className='flex items-center gap-2 shrink-0'>
             {/* Settings Button */}
             <button
               onClick={() => setIsSettingsOpen(true)}
@@ -901,7 +901,7 @@ const App: React.FC = () => {
         {/* SCROLLABLE GRID */}
         <main
           ref={mainScrollRef}
-          className='flex-1 overflow-y-auto custom-scrollbar px-6 pb-24 pt-6 scroll-smooth'
+          className='flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar px-4 sm:px-6 pb-24 pt-6 scroll-smooth'
         >
           <PromptGrid
             blocks={gridBlocks}

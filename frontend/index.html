@@ -3,50 +3,62 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PromptStream</title>
+    <title>prompts.ashref.tn</title>
+    <meta name="application-name" content="prompts.ashref.tn" />
     <meta
       name="description"
-      content="A professional prompt engineering studio with persistent storage and live AI compilation."
+      content="prompts.ashref.tn is a responsive prompt engineering workspace to organize, filter, and compose prompts with persistent storage."
     />
+    <meta
+      name="keywords"
+      content="prompt engineering, prompt manager, prompt library, AI prompts, prompt workflow"
+    />
+    <meta name="author" content="Ashref" />
+    <meta
+      name="robots"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    />
+    <meta name="theme-color" content="#0c0a09" />
+    <meta
+      name="theme-color"
+      media="(prefers-color-scheme: light)"
+      content="#fafaf9"
+    />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="prompts.ashref.tn" />
+    <link rel="canonical" href="https://prompts.ashref.tn/" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <!-- omitted hard-coded og:url so platforms use the actual shared URL -->
-    <meta property="og:site_name" content="PromptStream" />
-    <meta
-      property="og:title"
-      content="PromptStream — Architecture for Intelligence"
-    />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:url" content="https://prompts.ashref.tn/" />
+    <meta property="og:site_name" content="prompts.ashref.tn" />
+    <meta property="og:title" content="prompts.ashref.tn" />
     <meta
       property="og:description"
-      content="Organize context, simulate outputs, and curate prompt modules in a sleek, technical environment."
+      content="A responsive prompt engineering workspace to organize, filter, and compose prompts with persistent storage."
     />
     <meta property="og:image" content="/og-image.png" />
-    <meta property="og:image" content="/og-image.webp" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta
-      property="og:image:alt"
-      content="PromptStream — Architecture for Intelligence"
-    />
+    <meta property="og:image:alt" content="prompts.ashref.tn preview" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <!-- No fixed twitter:url (use item url or deployed domain) -->
-    <meta
-      name="twitter:title"
-      content="PromptStream — Architecture for Intelligence"
-    />
+    <meta name="twitter:title" content="prompts.ashref.tn" />
     <meta
       name="twitter:description"
-      content="Organize context, simulate outputs, and curate prompt modules in a sleek, technical environment."
+      content="A responsive prompt engineering workspace to organize, filter, and compose prompts with persistent storage."
     />
+    <meta name="twitter:url" content="https://prompts.ashref.tn/" />
     <meta name="twitter:image" content="/og-image.png" />
-    <meta
-      name="twitter:image:alt"
-      content="PromptStream — Architecture for Intelligence"
-    />
+    <meta name="twitter:image:alt" content="prompts.ashref.tn preview" />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="shortcut icon" href="/favicon.svg" />
@@ -54,7 +66,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&family=Sora:wght@500;600;700&display=swap"
       rel="stylesheet"
     />
     <script>
@@ -65,6 +77,7 @@
               sans: ['Inter', 'sans-serif'],
               serif: ['Instrument Serif', 'serif'],
               mono: ['JetBrains Mono', 'monospace'],
+              brand: ['Sora', 'sans-serif'],
             },
             colors: {
               stone: {
@@ -116,9 +129,17 @@
         --app-accent: #ffffff;
         --app-soft: #1c1917;
       }
+      html,
+      body,
+      #root {
+        width: 100%;
+        min-width: 0;
+        height: 100%;
+      }
       body {
         background-color: var(--app-bg);
         color: var(--app-text);
+        overflow-x: hidden;
       }
       body[data-theme='dark'] {
         color-scheme: dark;
