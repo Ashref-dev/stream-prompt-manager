@@ -1,34 +1,48 @@
 /* Shared utility classes referenced by components */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: var(--app-border-strong) var(--app-surface);
+  scrollbar-color: var(--app-border-strong) transparent;
+  scrollbar-color: color-mix(in srgb, var(--app-border-strong) 90%, transparent)
+    transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: var(--app-surface);
+  background: transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: var(--app-border-strong);
-  border-radius: 8px;
+  background: color-mix(
+    in srgb,
+    var(--app-border-strong) 85%,
+    var(--app-text-subtle) 15%
+  );
+  border-radius: 999px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: var(--app-text-subtle);
+  background: color-mix(
+    in srgb,
+    var(--app-border-strong) 65%,
+    var(--app-text-subtle) 35%
+  );
 }
 
 .no-scrollbar {
   -ms-overflow-style: none;
-  scrollbar-width: none;
+  scrollbar-width: none !important;
 }
 
 .no-scrollbar::-webkit-scrollbar {
-  display: none;
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
 }
 
 .mask-gradient {

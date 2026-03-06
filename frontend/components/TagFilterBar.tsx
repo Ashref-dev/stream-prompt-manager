@@ -79,7 +79,7 @@ const TagFilterBar: React.FC<TagFilterBarProps> = ({
       <div className='relative flex-1 min-w-0'>
         <div
           ref={scrollRef}
-          className='flex-1 min-w-0 overflow-x-auto custom-scrollbar scroll-smooth'
+          className='flex-1 min-w-0 overflow-x-auto no-scrollbar scroll-smooth'
         >
           <div className='flex items-center gap-2 flex-nowrap min-w-max pr-6'>
             {allTags.map((tag) => {
