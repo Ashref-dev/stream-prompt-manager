@@ -11,6 +11,7 @@ interface PromptGridProps {
   tagColors: Map<string, TagColor>;
   stacks: Stack[];
   activeStackId: string | null;
+  semanticReasons?: Map<string, string>;
   onFocus: (id: string) => void;
   onToggleMix: (id: string) => void;
   onAdd: () => void;
@@ -24,6 +25,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   tagColors,
   stacks,
   activeStackId,
+  semanticReasons,
   onFocus,
   onToggleMix,
   onAdd,
@@ -94,6 +96,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
           tagColors={tagColors}
           stackName={block.stackId ? stackMap.get(block.stackId) : undefined}
           showStackOrder={activeStackId !== null}
+          semanticReason={semanticReasons?.get(block.id)}
           onClick={() => onFocus(block.id)}
           onToggleMix={() => onToggleMix(block.id)}
         />

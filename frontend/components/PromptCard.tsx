@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PromptBlockData, TagColor } from '../types';
-import { Check, Copy, Maximize2, GitMerge, Layers } from 'lucide-react';
+import { Check, Copy, Maximize2, GitBranch, GitMerge, Layers } from 'lucide-react';
 import { getTagColorClasses } from '../constants';
 
 interface PromptCardProps {
@@ -10,6 +10,7 @@ interface PromptCardProps {
   tagColors: Map<string, TagColor>;
   stackName?: string;
   showStackOrder: boolean;
+  semanticReason?: string;
   onClick: () => void;
   onToggleMix: (id: string) => void;
 }
@@ -21,6 +22,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
   tagColors,
   stackName,
   showStackOrder,
+  semanticReason,
   onClick,
   onToggleMix,
 }) => {
@@ -69,6 +71,13 @@ const PromptCard: React.FC<PromptCardProps> = ({
             block.stackOrder !== undefined && (
             <span className='text-[9px] px-2 py-0.5 rounded border bg-[var(--app-surface-3)] text-[var(--app-text-strong)] border-[var(--app-border-strong)] font-bold'>
               #{block.stackOrder}
+            </span>
+          )}
+
+          {block.parentPromptId && (
+            <span className='text-[9px] px-2 py-0.5 rounded border border-[var(--app-border-strong)] bg-[var(--app-surface)] text-[var(--app-text-subtle)] font-bold uppercase tracking-wider inline-flex items-center gap-1'>
+              <GitBranch size={10} />
+              Fork
             </span>
           )}
 
@@ -144,11 +153,24 @@ const PromptCard: React.FC<PromptCardProps> = ({
               <Layers size={10} />
               {stackName}
             </span>
+            {semanticReason && (
+              <span className='text-[9px] uppercase tracking-[0.18em] text-[var(--app-text-subtle)]'>
+                {semanticReason}
+              </span>
+            )}
           </div>
           <Maximize2
             size={12}
             className='text-[var(--app-text-subtle)] opacity-0 group-hover:opacity-100 transition-opacity'
           />
+        </div>
+      )}
+
+      {!stackName && semanticReason && (
+        <div className='pt-2 mt-auto border-t border-[var(--app-border)]'>
+          <span className='text-[9px] uppercase tracking-[0.18em] text-[var(--app-text-subtle)]'>
+            {semanticReason}
+          </span>
         </div>
       )}
 

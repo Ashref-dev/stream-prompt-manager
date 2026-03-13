@@ -38,6 +38,10 @@ async def create_block(block: PromptBlockCreate, db: AsyncSession = Depends(get_
         tags=block.tags,
         stack_id=block.stack_id,
         stack_order=block.stack_order,
+        parent_prompt_id=block.parent_prompt_id,
+        root_prompt_id=block.root_prompt_id or block.id,
+        fork_note=block.fork_note,
+        derived_from_stack_id=block.derived_from_stack_id,
     )
     db.add(new_block)
     await db.commit()

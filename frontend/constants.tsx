@@ -1,4 +1,4 @@
-import { Template, PromptBlockData, TagColor } from './types';
+import { Template, PromptBlockData, StackThemeKey, TagColor } from './types';
 import {
   User,
   Shield,
@@ -220,3 +220,97 @@ export const getTagColorClasses = (
     ? CATEGORY_ACTIVE_COLORS['All']
     : CATEGORY_COLORS['All'];
 };
+
+export const STACK_THEMES: Record<
+  StackThemeKey,
+  {
+    label: string;
+    description: string;
+    vars: Record<string, string>;
+  }
+> = {
+  'midnight-grid': {
+    label: 'Midnight Grid',
+    description: 'High-contrast noir with clean steel accents.',
+    vars: {
+      '--app-bg': '#0c0a09',
+      '--app-surface': '#111111',
+      '--app-surface-2': '#161616',
+      '--app-surface-3': '#1a1a1a',
+      '--app-surface-4': '#0f0f0f',
+      '--app-border': '#292524',
+      '--app-border-strong': '#57534e',
+      '--app-text': '#e7e5e4',
+      '--app-text-muted': '#a8a29e',
+      '--app-text-subtle': '#78716c',
+      '--app-text-strong': '#fafaf9',
+      '--app-inverse': '#0c0a09',
+      '--app-accent': '#ffffff',
+      '--app-soft': '#1c1917',
+    },
+  },
+  'signal-sunset': {
+    label: 'Signal Sunset',
+    description: 'Copper red accents with warm editorial contrast.',
+    vars: {
+      '--app-bg': '#130d0c',
+      '--app-surface': '#1c1311',
+      '--app-surface-2': '#241816',
+      '--app-surface-3': '#2f1e1b',
+      '--app-surface-4': '#17100f',
+      '--app-border': '#4b2e28',
+      '--app-border-strong': '#8e4f43',
+      '--app-text': '#f4e9e4',
+      '--app-text-muted': '#d0b4aa',
+      '--app-text-subtle': '#a47769',
+      '--app-text-strong': '#fff6f1',
+      '--app-inverse': '#130d0c',
+      '--app-accent': '#f6c59f',
+      '--app-soft': '#241816',
+    },
+  },
+  'oxide-paper': {
+    label: 'Oxide Paper',
+    description: 'Light canvas with copper-black structure.',
+    vars: {
+      '--app-bg': '#f7f2ea',
+      '--app-surface': '#fffaf4',
+      '--app-surface-2': '#f1e6d9',
+      '--app-surface-3': '#eadac9',
+      '--app-surface-4': '#f5ece1',
+      '--app-border': '#d7c0aa',
+      '--app-border-strong': '#b78f72',
+      '--app-text': '#251814',
+      '--app-text-muted': '#5f463b',
+      '--app-text-subtle': '#8b6b58',
+      '--app-text-strong': '#130d0c',
+      '--app-inverse': '#fffaf4',
+      '--app-accent': '#251814',
+      '--app-soft': '#efe2d5',
+    },
+  },
+  'sea-glass': {
+    label: 'Sea Glass',
+    description: 'Teal slate atmosphere for research-heavy stacks.',
+    vars: {
+      '--app-bg': '#071317',
+      '--app-surface': '#0e1d22',
+      '--app-surface-2': '#13272d',
+      '--app-surface-3': '#18343c',
+      '--app-surface-4': '#0b171b',
+      '--app-border': '#264954',
+      '--app-border-strong': '#4a7b86',
+      '--app-text': '#dfeef0',
+      '--app-text-muted': '#9ec0c6',
+      '--app-text-subtle': '#7098a0',
+      '--app-text-strong': '#f3fcfd',
+      '--app-inverse': '#071317',
+      '--app-accent': '#8bd3d6',
+      '--app-soft': '#102126',
+    },
+  },
+};
+
+export const getStackThemeStyle = (themeKey?: string): Record<string, string> =>
+  STACK_THEMES[(themeKey as StackThemeKey) || 'midnight-grid']?.vars ||
+  STACK_THEMES['midnight-grid'].vars;

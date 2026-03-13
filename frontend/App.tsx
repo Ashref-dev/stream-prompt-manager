@@ -12,8 +12,10 @@ import QuickCreator from './components/QuickCreator';
 import TagFilterBar from './components/TagFilterBar';
 import StacksBar from './components/StacksBar';
 import SettingsOverlay from './components/SettingsOverlay';
+import StackSettingsOverlay from './components/StackSettingsOverlay';
 import {
   PromptBlockData,
+  SemanticSearchResult,
   ToastMessage,
   ToastType,
   TagColor,
@@ -30,18 +32,22 @@ import {
   Waves,
   LayoutGrid,
   Search,
+  Sparkles,
   X,
   Loader2,
   Undo2,
   Settings,
+  WandSparkles,
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import {
   CATEGORY_COLORS,
   DEFAULT_TAG_LIGHTNESS,
   generateUniqueHue,
+  getStackThemeStyle,
 } from './constants';
 import * as api from './services/api';
+import { navigateTo } from './navigation';
 
 // Advanced Tag Detection System
 const detectTags = (content: string): string[] => {
@@ -271,6 +277,10 @@ const App: React.FC = () => {
 
   // Settings state
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isStackSettingsOpen, setIsStackSettingsOpen] = useState(false);
+  const [searchMode, setSearchMode] = useState<'keyword' | 'semantic'>('keyword');
+  const [semanticResults, setSemanticResults] = useState<SemanticSearchResult[]>([]);
+  const [isSemanticLoading, setIsSemanticLoading] = useState(false);
 
   const mainScrollRef = useRef<HTMLDivElement>(null);
   const pendingDeletions = useRef<Record<string, NodeJS.Timeout>>({});
@@ -338,6 +348,33 @@ const App: React.FC = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  useEffect(() => {
+    if (searchMode !== 'semantic' || !searchQuery.trim()) {
+      setSemanticResults([]);
+      setIsSemanticLoading(false);
+      return;
+    }
+
+    const timeout = window.setTimeout(async () => {
+      setIsSemanticLoading(true);
+      try {
+        const result = await api.semanticSearch({
+          query: searchQuery,
+          activeTags,
+          stackId: activeStackId,
+          limit: 40,
+        });
+        setSemanticResults(result.results);
+      } catch (error) {
+        console.error('Semantic search failed:', error);
+      } finally {
+        setIsSemanticLoading(false);
+      }
+    }, 280);
+
+    return () => window.clearTimeout(timeout);
+  }, [searchMode, searchQuery, activeTags, activeStackId]);
 
   const scrollToTop = () => {
     if (mainScrollRef.current) {
@@ -419,10 +456,13 @@ const App: React.FC = () => {
     const newStack: Stack = {
       id: nanoid(),
       name,
+      slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      themeKey: 'midnight-grid',
+      isPublished: false,
       createdAt: new Date(),
     };
-    setStacks((prev) => [...prev, newStack]);
-    await api.createStack(newStack);
+    const created = await api.createStack(newStack);
+    setStacks((prev) => [...prev, created]);
     addToast(`Stack "${name}" created`, 'success');
   }, []);
 
@@ -447,12 +487,43 @@ const App: React.FC = () => {
 
   const handleRenameStack = useCallback(
     async (stackId: string, name: string) => {
+      const updated = await api.updateStack(stackId, { name });
       setStacks((prev) =>
-        prev.map((s) => (s.id === stackId ? { ...s, name } : s)),
+        prev.map((s) => (s.id === stackId ? { ...s, ...updated } : s)),
       );
-      await api.updateStack(stackId, name);
     },
     [],
+  );
+
+  const handleSaveStackSettings = useCallback(
+    async (updates: Partial<Stack>) => {
+      if (!activeStackId) return;
+      const updated = await api.updateStack(activeStackId, updates);
+      setStacks((prev) =>
+        prev.map((stack) =>
+          stack.id === activeStackId ? { ...stack, ...updated } : stack,
+        ),
+      );
+      addToast('Stack settings updated', 'success');
+    },
+    [activeStackId],
+  );
+
+  const handlePublishStack = useCallback(
+    async (payload: { isPublished: boolean; slug?: string }) => {
+      if (!activeStackId) return;
+      const updated = await api.publishStack(activeStackId, payload);
+      setStacks((prev) =>
+        prev.map((stack) =>
+          stack.id === activeStackId ? { ...stack, ...updated } : stack,
+        ),
+      );
+      addToast(
+        payload.isPublished ? 'Stack published' : 'Stack unpublished',
+        'success',
+      );
+    },
+    [activeStackId],
   );
 
   const handleMoveToStack = useCallback(
@@ -513,6 +584,7 @@ const App: React.FC = () => {
         title: smartTitle || 'Stream Prompt',
         content: content,
         tags: autoTags,
+        rootPromptId: undefined,
         isNew: true,
         isDeleting: true,
       };
@@ -529,7 +601,15 @@ const App: React.FC = () => {
       }, 10);
 
       try {
-        await api.createBlock(newBlock);
+        const saved = await api.createBlock({
+          ...newBlock,
+          rootPromptId: newBlock.id,
+        });
+        setBlocks((prev) =>
+          prev.map((block) =>
+            block.id === newBlock.id ? { ...block, ...saved } : block,
+          ),
+        );
         addToast('Prompt synchronized to database', 'success');
       } catch (error) {
         console.error('Failed to save block:', error);
@@ -742,6 +822,63 @@ const App: React.FC = () => {
     .filter((b): b is PromptBlockData => !!b);
 
   const focusedBlock = blocks.find((b) => b.id === focusedBlockId);
+  const activeStack = useMemo(
+    () => stacks.find((stack) => stack.id === activeStackId) || null,
+    [stacks, activeStackId],
+  );
+
+  const handleForkCreated = useCallback(
+    (forkedBlock: PromptBlockData) => {
+      forkedBlock.tags.forEach((tag) => ensureTagColor(tag));
+      setBlocks((prev) => [{ ...forkedBlock, isNew: true }, ...prev]);
+      setFocusedBlockId(forkedBlock.id);
+      addToast('Prompt fork created', 'success');
+      setTimeout(() => {
+        setBlocks((prev) =>
+          prev.map((block) =>
+            block.id === forkedBlock.id ? { ...block, isNew: false } : block,
+          ),
+        );
+      }, 1800);
+    },
+    [ensureTagColor],
+  );
+
+  const handleOpenPrompt = useCallback((id: string) => {
+    setFocusedBlockId(id);
+  }, []);
+
+  const handleCreateCompositionFromRack = useCallback(async () => {
+    if (activeBlocks.length === 0) {
+      addToast('Add prompts to the rack first', 'info');
+      return;
+    }
+    const composition = await api.createComposition({
+      id: nanoid(),
+      name: activeStack ? `${activeStack.name} Composition` : 'New Composition',
+      description: 'Generated from the current rack selection.',
+      sourceStackId: activeStack?.id,
+      items: activeBlocks.map((block, index) => ({
+        id: nanoid(),
+        sourcePromptId: block.isTemp ? undefined : block.id,
+        kind: block.isTemp ? 'inline' : 'prompt',
+        content: block.content,
+        section:
+          block.type === 'persona'
+            ? 'role'
+            : block.type === 'constraint'
+              ? 'rules'
+              : block.type === 'format'
+                ? 'output'
+                : block.type === 'example'
+                  ? 'examples'
+                  : 'context',
+        position: index,
+        label: block.title,
+      })),
+    });
+    navigateTo(`/compose/${composition.id}`);
+  }, [activeBlocks, activeStack]);
 
   // Compute filtered blocks
   const gridBlocks = useMemo(() => {
@@ -757,18 +894,27 @@ const App: React.FC = () => {
     return filtered;
   }, [blocks, activeStackId]);
 
+  const semanticReasonMap = useMemo(
+    () => new Map(semanticResults.map((result) => [result.promptId, result.reason])),
+    [semanticResults],
+  );
+
   const visibleBlockIds = useMemo(() => {
     return new Set(
       gridBlocks
         .filter((b) => {
           // Search filter
           if (searchQuery) {
-            const q = searchQuery.toLowerCase();
-            const matchesSearch =
-              b.title.toLowerCase().includes(q) ||
-              b.content.toLowerCase().includes(q) ||
-              b.tags.some((t) => t.toLowerCase().includes(q));
-            if (!matchesSearch) return false;
+            if (searchMode === 'semantic') {
+              if (!semanticReasonMap.has(b.id)) return false;
+            } else {
+              const q = searchQuery.toLowerCase();
+              const matchesSearch =
+                b.title.toLowerCase().includes(q) ||
+                b.content.toLowerCase().includes(q) ||
+                b.tags.some((t) => t.toLowerCase().includes(q));
+              if (!matchesSearch) return false;
+            }
           }
 
           // Tag filter (match ANY of the active tags)
@@ -781,7 +927,7 @@ const App: React.FC = () => {
         })
         .map((b) => b.id),
     );
-  }, [gridBlocks, searchQuery, activeTags]);
+  }, [gridBlocks, searchQuery, activeTags, searchMode, semanticReasonMap]);
 
   // Loading state
   if (isLoading) {
@@ -798,7 +944,10 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className='relative h-screen w-full max-w-full bg-[var(--app-bg)] text-[var(--app-text)] font-sans overflow-hidden flex selection:bg-[var(--app-text-strong)] selection:text-[var(--app-inverse)]'>
+    <div
+      className='relative h-screen w-full max-w-full bg-[var(--app-bg)] text-[var(--app-text)] font-sans overflow-hidden flex selection:bg-[var(--app-text-strong)] selection:text-[var(--app-inverse)]'
+      style={activeStack ? getStackThemeStyle(activeStack.themeKey) : undefined}
+    >
       {/* Dark Technical Background Grid */}
       <div
         className='absolute inset-0 z-0 opacity-[0.03] pointer-events-none'
@@ -845,6 +994,32 @@ const App: React.FC = () => {
           </div>
 
           <div className='flex items-center gap-2 shrink-0'>
+            <button
+              onClick={() =>
+                setSearchMode((prev) =>
+                  prev === 'keyword' ? 'semantic' : 'keyword',
+                )
+              }
+              className={`px-3 py-2 rounded-lg border text-[10px] font-bold uppercase tracking-[0.18em] ${
+                searchMode === 'semantic'
+                  ? 'border-[var(--app-border-strong)] bg-[var(--app-surface-2)] text-[var(--app-text-strong)]'
+                  : 'border-[var(--app-border)] text-[var(--app-text-subtle)]'
+              }`}
+              title='Toggle search mode'
+            >
+              {searchMode === 'semantic' ? 'Semantic' : 'Keyword'}
+            </button>
+
+            {activeStack && (
+              <button
+                onClick={() => setIsStackSettingsOpen(true)}
+                className='p-2 text-[var(--app-text-subtle)] hover:text-[var(--app-text-strong)] hover:bg-[var(--app-surface-3)] rounded-lg transition-all'
+                title='Active stack settings'
+              >
+                <WandSparkles size={18} />
+              </button>
+            )}
+
             {/* Settings Button */}
             <button
               onClick={() => setIsSettingsOpen(true)}
@@ -911,6 +1086,7 @@ const App: React.FC = () => {
             tagColors={tagColorMap}
             stacks={stacks}
             activeStackId={activeStackId}
+            semanticReasons={semanticReasonMap}
             onFocus={setFocusedBlockId}
             onToggleMix={toggleMixerItem}
             onAdd={() => setIsCreating(true)}
@@ -938,9 +1114,15 @@ const App: React.FC = () => {
           <div className='absolute bottom-6 left-1/2 -translate-x-1/2 z-40 animate-in slide-in-from-bottom-2 fade-in duration-300'>
             <div className='flex items-center h-10 gap-3 bg-[var(--app-bg)] backdrop-blur-md border border-[var(--app-border)] text-[var(--app-text-strong)] px-4 rounded-full shadow-2xl ring-1 ring-white/5'>
               <Search size={14} className='text-[var(--app-text-subtle)]' />
+              {searchMode === 'semantic' && (
+                <Sparkles size={12} className='text-[var(--app-text-subtle)]' />
+              )}
               <span className='text-sm font-mono tracking-tight text-[var(--app-text)]'>
                 {searchQuery}
               </span>
+              {isSemanticLoading && (
+                <Loader2 size={12} className='animate-spin text-[var(--app-text-subtle)]' />
+              )}
               <button
                 onClick={() => setSearchQuery('')}
                 className='ml-1 p-0.5 bg-[var(--app-surface-3)] hover:bg-[var(--app-surface-2)] rounded-full text-[var(--app-text-subtle)] hover:text-[var(--app-text-strong)] transition-colors'
@@ -967,6 +1149,7 @@ const App: React.FC = () => {
         stacks={stacks}
         tagColors={tagColorMap}
         onMoveToStack={(stackId) => handleMoveToStack(mixerIds, stackId)}
+        onCompose={handleCreateCompositionFromRack}
       />
 
       {/* OVERLAYS */}
@@ -985,6 +1168,8 @@ const App: React.FC = () => {
           stacks={stacks}
           tagColors={tagColorMap}
           onEnsureTagColor={ensureTagColor}
+          onForkCreated={handleForkCreated}
+          onOpenPrompt={handleOpenPrompt}
         />
       )}
 
@@ -1002,6 +1187,14 @@ const App: React.FC = () => {
         onUpdateThemeMode={setThemeMode}
         isAutoTaggingEnabled={isAutoTaggingEnabled}
         onToggleAutoTagging={setIsAutoTaggingEnabled}
+      />
+
+      <StackSettingsOverlay
+        isOpen={isStackSettingsOpen}
+        stack={activeStack}
+        onClose={() => setIsStackSettingsOpen(false)}
+        onSave={handleSaveStackSettings}
+        onPublish={handlePublishStack}
       />
 
       <ToastContainer

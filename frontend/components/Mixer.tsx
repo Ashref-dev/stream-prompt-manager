@@ -34,6 +34,7 @@ interface MixerProps {
   stacks: Stack[];
   tagColors: Map<string, TagColor>;
   onMoveToStack: (stackId: string | null) => void;
+  onCompose: () => void;
 }
 
 interface SortableMixerItemProps {
@@ -191,6 +192,7 @@ const Mixer: React.FC<MixerProps> = ({
   stacks,
   tagColors,
   onMoveToStack,
+  onCompose,
 }) => {
   const [isMoveMenuOpen, setIsMoveMenuOpen] = React.useState(false);
   const sensors = useSensors(
@@ -278,6 +280,12 @@ const Mixer: React.FC<MixerProps> = ({
             <Plus size={10} /> Stub
           </button>
           <div className='w-px h-4 bg-[var(--app-border)] mx-1'></div>
+          <button
+            onClick={onCompose}
+            className='px-3 py-1.5 rounded-md border border-[var(--app-border)] text-[10px] font-bold uppercase tracking-wider text-[var(--app-text-subtle)] hover:text-[var(--app-text-strong)]'
+          >
+            Compose
+          </button>
           <button
             onClick={() => setMixerIds([])}
             className='p-2 text-[var(--app-text-subtle)] hover:text-red-500 transition-colors'
