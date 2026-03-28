@@ -1,56 +1,74 @@
-# Stream Prompts
+# prompts.ashref.tn
 
-A professional Prompt Engineering Studio for creating, mixing, and managing AI prompts.
+A prompt engineering studio for creating, mixing, and managing AI prompts. Deployed at [prompts.ashref.tn](https://prompts.ashref.tn).
 
-## Quick Start (Docker - Recommended)
+## Stack
 
-The easiest way to run Stream Prompts is using Docker Compose. This starts the Frontend, Backend, and PostgreSQL database.
+- **Frontend**: React 19, TypeScript, Vite, Bun, Tailwind CSS, dnd-kit, GSAP
+- **Backend**: Python 3.11+, FastAPI, SQLAlchemy, asyncpg, slowapi
+- **Database**: PostgreSQL 15
+- **Deploy**: Docker Compose + reverse proxy (Nginx/Caddy)
 
-1.  **Start the Application**:
-    ```bash
-    docker compose up --build
-    ```
-    This will take a few minutes the first time to build the images.
+## Quick Start (Docker)
 
-2.  **Access the App**:
-    - Frontend: [http://localhost:3000](http://localhost:3000)
-    - Backend API: [http://localhost:8000/docs](http://localhost:8000/docs)
+```bash
+cp .env.example .env   # fill in values
+docker compose up --build
+```
 
-3.  **Stop the Application**:
-    ```bash
-    docker compose down
-    ```
+- Frontend: http://localhost:3004
+- Backend API docs: http://localhost:8002/docs
 
-## Manual Setup (Development)
+```bash
+docker compose down
+```
 
-<details>
-<summary>Click to verify prerequisites and install manually</summary>
+## Manual Setup (Dev)
 
-### Prerequisites
-- Node.js & Bun
-- Python 3.11+ & uv
-- PostgreSQL Database
-
-### 1. Backend Setup
+**Backend**
 ```bash
 cd backend
-# Create .env from example and update DATABASE_URL
-cp .env.example .env 
+cp .env.example .env
 uv sync
 uv run uvicorn app.main:app --reload --port 8000
 ```
 
-### 2. Frontend Setup
+**Frontend**
 ```bash
 cd frontend
+cp .env.example .env
 bun install
 bun run dev
 ```
-</details>
+
+## Environment Variables
+
+Root `.env` (required for Docker):
+
+```
+POSTGRES_PASSWORD=
+DATABASE_URL=postgresql+asyncpg://postgres:<password>@db:5432/stream_prompts
+CORS_ORIGINS=https://prompts.ashref.tn
+VITE_API_URL=https://prompts.ashref.tn/api
+```
 
 ## Features
 
-- **Prompt Mixer**: Drag & drop prompt components.
-- **Stacks**: Organize prompts into logical groups.
-- **Tag Management**: Color-coded tags for filtering.
-- **Rate Limited API**: Protection against abuse.
+- **Prompt Grid**: Organize prompts with color-coded tags and stacks
+- **Mixer Rack**: Drag & drop prompt components to compose complex prompts
+- **Stacks**: Group prompts into logical collections with custom themes
+- **Semantic Search**: AI-powered search across your prompt library
+- **Tag Management**: Auto-detection and color-coded tagging
+- **Rate Limited API**: Backend protected with slowapi (100 req/min default)
+
+## Production Deployment
+
+1. Clone repo to VPS
+2. Set up `.env` with production values (strong `POSTGRES_PASSWORD`, correct `CORS_ORIGINS`)
+3. Run `docker compose up -d --build`
+4. Configure reverse proxy (Nginx or Caddy) to forward traffic to port 3004
+5. Ensure ports 5432 and 8002 are NOT exposed externally — only 80/443 and 22
+
+## License
+
+Private — all rights reserved.
