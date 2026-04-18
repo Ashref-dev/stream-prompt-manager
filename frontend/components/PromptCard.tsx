@@ -1,30 +1,26 @@
 import React, { useState } from 'react';
 import { PromptBlockData, TagColor } from '../types';
-import { Check, Copy, Maximize2, GitBranch, GitMerge, Layers } from 'lucide-react';
+import { Check, Copy, Maximize2, GitBranch, Layers } from 'lucide-react';
 import { getTagColorClasses } from '../constants';
 
 interface PromptCardProps {
   block: PromptBlockData;
   isVisible: boolean;
-  isMixing: boolean;
   tagColors: Map<string, TagColor>;
   stackName?: string;
   showStackOrder: boolean;
   semanticReason?: string;
   onClick: () => void;
-  onToggleMix: (id: string) => void;
 }
 
 const PromptCard: React.FC<PromptCardProps> = ({
   block,
   isVisible,
-  isMixing,
   tagColors,
   stackName,
   showStackOrder,
   semanticReason,
   onClick,
-  onToggleMix,
 }) => {
   const [copied, setCopied] = useState(false);
 
@@ -35,16 +31,12 @@ const PromptCard: React.FC<PromptCardProps> = ({
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const handleToggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onToggleMix(block.id);
-  };
-
   // Combine visibility and deleting for the visual state
   const isActive = isVisible && !block.isDeleting;
 
   return (
-    <div
+    <button
+      type='button'
       className={`
         break-inside-avoid w-full group relative bg-[var(--app-surface-2)] border rounded-lg 
         transition-all duration-500 ease-in-out cursor-pointer flex flex-col gap-2 overflow-hidden
@@ -54,9 +46,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
             : 'opacity-0 scale-90 max-h-0 p-0 mb-0 border-0 pointer-events-none translate-y-4 shadow-none'
         }
         ${
-          isMixing
-            ? 'border-[var(--app-border-strong)] ring-1 ring-[var(--app-border-strong)] shadow-xl translate-x-1'
-            : 'border-[var(--app-border)] hover:border-[var(--app-border-strong)] hover:shadow-lg hover:-translate-y-1 hover:bg-[var(--app-surface-3)]'
+          'border-[var(--app-border)] hover:border-[var(--app-border-strong)] hover:shadow-lg hover:-translate-y-1 hover:bg-[var(--app-surface-3)]'
         }
         ${block.isNew && isVisible ? 'animate-flash-border' : ''}
       `}
@@ -102,8 +92,9 @@ const PromptCard: React.FC<PromptCardProps> = ({
 
         <div className='flex items-center gap-1'>
           <button
+            type='button'
             onClick={handleCopy}
-            className='opacity-0 group-hover:opacity-100 p-1.5 text-[var(--app-text-subtle)] hover:text-[var(--app-text-strong)] hover:bg-[var(--app-surface-3)] rounded-md transition-all'
+            className='p-1.5 text-[var(--app-text-subtle)] opacity-80 transition-all hover:bg-[var(--app-surface-3)] hover:text-[var(--app-text-strong)] group-hover:opacity-100'
             title='Copy to Clipboard'
           >
             {copied ? (
@@ -112,28 +103,13 @@ const PromptCard: React.FC<PromptCardProps> = ({
               <Copy size={16} />
             )}
           </button>
-
-          {/* BIGGER TOGGLE BUTTON */}
-          <button
-            onClick={handleToggle}
-            className={`p-1.5 rounded-md transition-all border flex items-center justify-center ${
-              isMixing
-                ? 'bg-[var(--app-accent)] text-[var(--app-inverse)] border-[var(--app-accent)]'
-                : 'text-[var(--app-text-subtle)] border-transparent hover:border-[var(--app-border-strong)] hover:bg-[var(--app-surface-3)] hover:text-[var(--app-text)]'
-            }`}
-            title={isMixing ? 'Remove from Rack' : 'Add to Rack'}
-          >
-            {isMixing ? <Check size={16} /> : <GitMerge size={16} />}
-          </button>
         </div>
       </div>
 
       {/* CONTENT PREVIEW */}
       <div className='relative'>
         <p
-          className={`text-sm font-mono text-[var(--app-text)] leading-relaxed line-clamp-[8] whitespace-pre-wrap font-medium ${
-            isMixing ? 'opacity-100' : 'opacity-80'
-          }`}
+          className='text-sm font-mono font-medium leading-relaxed text-[var(--app-text)] line-clamp-[8] whitespace-pre-wrap opacity-80'
         >
           {block.content || (
             <span className='text-[var(--app-text-subtle)] italic'>
@@ -173,12 +149,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
           </span>
         </div>
       )}
-
-      {/* Active Indicator Corner */}
-      {isMixing && (
-        <div className='absolute -top-1 -right-1 w-3 h-3 bg-[var(--app-accent)] rounded-full border-2 border-[var(--app-surface-2)] shadow-sm'></div>
-      )}
-    </div>
+    </button>
   );
 };
 

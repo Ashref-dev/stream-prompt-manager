@@ -41,7 +41,7 @@ lerna-debug.log*
 *.sw?
 
 # TypeScript
-lib/
+/lib/
 *.tsbuildinfo
 
 # Testing and coverage

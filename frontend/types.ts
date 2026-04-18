@@ -27,7 +27,6 @@ export interface PromptBlockData {
   createdAt?: Date;
   updatedAt?: Date;
   isNew?: boolean;
-  isTemp?: boolean;
   isDeleting?: boolean;
 }
 

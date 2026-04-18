@@ -6,7 +6,6 @@ import React, {
   useMemo,
 } from 'react';
 import PromptGrid from './components/PromptGrid';
-import Mixer from './components/Mixer';
 import EditorOverlay from './components/EditorOverlay';
 import QuickCreator from './components/QuickCreator';
 import TagFilterBar from './components/TagFilterBar';
@@ -27,8 +26,6 @@ import {
   Check,
   AlertCircle,
   Info,
-  PanelRightClose,
-  PanelRightOpen,
   Waves,
   LayoutGrid,
   Search,
@@ -38,6 +35,7 @@ import {
   Undo2,
   Settings,
   WandSparkles,
+  NotebookPen,
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import {
@@ -209,6 +207,7 @@ const ToastContainer: React.FC<{
 
           {toast.actionLabel && toast.onAction && (
             <button
+              type='button'
               onClick={(e) => {
                 e.stopPropagation();
                 toast.onAction?.();
@@ -234,10 +233,6 @@ const App: React.FC = () => {
   // Core state
   const [blocks, setBlocks] = useState<PromptBlockData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  // Mixer state
-  const [mixerIds, setMixerIds] = useState<string[]>([]);
-  const [isMixerOpen, setIsMixerOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [focusedBlockId, setFocusedBlockId] = useState<string | null>(null);
 
@@ -286,7 +281,7 @@ const App: React.FC = () => {
   const pendingDeletions = useRef<Record<string, NodeJS.Timeout>>({});
   const pendingTagColors = useRef<Map<string, number>>(new Map());
 
-  const addToast = (
+  const addToast = useCallback((
     message: string,
     type: ToastType = 'info',
     actionLabel?: string,
@@ -301,7 +296,7 @@ const App: React.FC = () => {
       () => setToasts((prev) => prev.filter((t) => t.id !== id)),
       actionLabel ? 6000 : 3000,
     );
-  };
+  }, []);
 
   // Initialize database and load all data
   // Load all data from API
@@ -324,7 +319,7 @@ const App: React.FC = () => {
       }
     };
     loadData();
-  }, []);
+  }, [addToast]);
 
   // Save column count to localStorage
   useEffect(() => {
@@ -376,11 +371,11 @@ const App: React.FC = () => {
     return () => window.clearTimeout(timeout);
   }, [searchMode, searchQuery, activeTags, activeStackId]);
 
-  const scrollToTop = () => {
+  const scrollToTop = useCallback(() => {
     if (mainScrollRef.current) {
       mainScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  };
+  }, []);
 
   // Create tag color map for quick lookup
   const tagColorMap = useMemo(() => {
@@ -390,7 +385,11 @@ const App: React.FC = () => {
   // Collect all unique tags from blocks
   const allTags = useMemo(() => {
     const tagSet = new Set<string>();
-    blocks.forEach((b) => b.tags?.forEach((t) => tagSet.add(t)));
+    blocks.forEach((b) => {
+      b.tags?.forEach((t) => {
+        tagSet.add(t);
+      });
+    });
     return Array.from(tagSet).sort();
   }, [blocks]);
 
@@ -447,7 +446,7 @@ const App: React.FC = () => {
     missingTags.forEach((tag) => {
       const newHue = generateUniqueHue(nextHues);
       nextHues.push(newHue);
-      handleUpdateTagColor(tag, newHue, DEFAULT_TAG_LIGHTNESS);
+      void handleUpdateTagColor(tag, newHue, DEFAULT_TAG_LIGHTNESS);
     });
   }, [allTags, tagColors, tagColorMap, handleUpdateTagColor]);
 
@@ -464,7 +463,7 @@ const App: React.FC = () => {
     const created = await api.createStack(newStack);
     setStacks((prev) => [...prev, created]);
     addToast(`Stack "${name}" created`, 'success');
-  }, []);
+  }, [addToast]);
 
   const handleDeleteStack = useCallback(
     async (stackId: string) => {
@@ -482,7 +481,7 @@ const App: React.FC = () => {
       await api.deleteStack(stackId);
       if (stack) addToast(`Stack "${stack.name}" deleted`, 'info');
     },
-    [stacks, activeStackId],
+    [activeStackId, addToast, stacks],
   );
 
   const handleRenameStack = useCallback(
@@ -506,7 +505,7 @@ const App: React.FC = () => {
       );
       addToast('Stack settings updated', 'success');
     },
-    [activeStackId],
+    [activeStackId, addToast],
   );
 
   const handlePublishStack = useCallback(
@@ -523,7 +522,7 @@ const App: React.FC = () => {
         'success',
       );
     },
-    [activeStackId],
+    [activeStackId, addToast],
   );
 
   const handleMoveToStack = useCallback(
@@ -556,7 +555,7 @@ const App: React.FC = () => {
         addToast('Failed to move to stack', 'error');
       }
     },
-    [stacks],
+    [addToast, stacks],
   );
 
   // Tag filter handlers
@@ -576,7 +575,9 @@ const App: React.FC = () => {
       const smartTitle =
         firstLine.length > 40 ? firstLine.substring(0, 40) + '...' : firstLine;
       const autoTags = isAutoTaggingEnabled ? detectTags(content) : [];
-      autoTags.forEach((tag) => ensureTagColor(tag));
+      autoTags.forEach((tag) => {
+        ensureTagColor(tag);
+      });
 
       const newBlock: PromptBlockData = {
         id: nanoid(),
@@ -623,45 +624,14 @@ const App: React.FC = () => {
         );
       }, 2000);
     },
-    [addToast, scrollToTop, ensureTagColor, isAutoTaggingEnabled],
+    [addToast, ensureTagColor, isAutoTaggingEnabled, scrollToTop],
   );
-
-  const handleAddTempBlock = () => {
-    const newBlock: PromptBlockData = {
-      id: nanoid(),
-      type: 'instruction',
-      title: 'Quick Prompt',
-      content: '',
-      tags: ['Temp'],
-      isTemp: true,
-      isNew: true,
-      isDeleting: true,
-    };
-    setBlocks((prev) => [newBlock, ...prev]);
-    setMixerIds((prev) => [...prev, newBlock.id]);
-
-    setTimeout(() => {
-      setBlocks((prev) =>
-        prev.map((b) =>
-          b.id === newBlock.id ? { ...b, isDeleting: false } : b,
-        ),
-      );
-    }, 10);
-
-    setTimeout(() => {
-      setBlocks((prev) =>
-        prev.map((b) => (b.id === newBlock.id ? { ...b, isNew: false } : b)),
-      );
-    }, 2000);
-
-    addToast('Stub added to rack', 'info');
-  };
 
   const updateBlock = useCallback(
     async (id: string, updates: Partial<PromptBlockData>) => {
       setBlocks((prev) => {
         const block = prev.find((b) => b.id === id);
-        if (block && !block.isTemp) {
+        if (block) {
           api.updateBlock(id, updates).catch((err) => {
             console.error('Failed to update block:', err);
             addToast('Failed to save changes', 'error');
@@ -670,7 +640,7 @@ const App: React.FC = () => {
         return prev.map((b) => (b.id === id ? { ...b, ...updates } : b));
       });
     },
-    [],
+    [addToast],
   );
 
   const removeBlock = useCallback(
@@ -685,10 +655,6 @@ const App: React.FC = () => {
         setBlocks((prev) => {
           const block = prev.find((b) => b.id === id);
           if (!block) return prev;
-
-          if (block.isTemp) {
-            return prev.filter((b) => b.id !== id);
-          }
 
           blockToRestore = { ...block, isDeleting: false };
 
@@ -739,11 +705,9 @@ const App: React.FC = () => {
           return prev.filter((b) => b.id !== id);
         });
       }, 400);
-
-      setMixerIds((prev) => prev.filter((mid) => mid !== id));
       if (focusedBlockId === id) setFocusedBlockId(null);
     },
-    [focusedBlockId],
+    [addToast, focusedBlockId],
   );
 
   // Global paste handler
@@ -805,21 +769,7 @@ const App: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [searchQuery]);
-
-  const toggleMixerItem = (id: string) => {
-    setMixerIds((prev) =>
-      prev.includes(id) ? prev.filter((mid) => mid !== id) : [...prev, id],
-    );
-  };
-
-  const handleMixerReorder = (newOrder: string[]) => {
-    setMixerIds(newOrder);
-  };
-
-  const activeBlocks = mixerIds
-    .map((id) => blocks.find((b) => b.id === id))
-    .filter((b): b is PromptBlockData => !!b);
+  }, [scrollToTop, searchQuery]);
 
   const focusedBlock = blocks.find((b) => b.id === focusedBlockId);
   const activeStack = useMemo(
@@ -829,7 +779,9 @@ const App: React.FC = () => {
 
   const handleForkCreated = useCallback(
     (forkedBlock: PromptBlockData) => {
-      forkedBlock.tags.forEach((tag) => ensureTagColor(tag));
+      forkedBlock.tags.forEach((tag) => {
+        ensureTagColor(tag);
+      });
       setBlocks((prev) => [{ ...forkedBlock, isNew: true }, ...prev]);
       setFocusedBlockId(forkedBlock.id);
       addToast('Prompt fork created', 'success');
@@ -841,48 +793,16 @@ const App: React.FC = () => {
         );
       }, 1800);
     },
-    [ensureTagColor],
+    [addToast, ensureTagColor],
   );
 
   const handleOpenPrompt = useCallback((id: string) => {
     setFocusedBlockId(id);
   }, []);
 
-  const handleCreateCompositionFromRack = useCallback(async () => {
-    if (activeBlocks.length === 0) {
-      addToast('Add prompts to the rack first', 'info');
-      return;
-    }
-    const composition = await api.createComposition({
-      id: nanoid(),
-      name: activeStack ? `${activeStack.name} Composition` : 'New Composition',
-      description: 'Generated from the current rack selection.',
-      sourceStackId: activeStack?.id,
-      items: activeBlocks.map((block, index) => ({
-        id: nanoid(),
-        sourcePromptId: block.isTemp ? undefined : block.id,
-        kind: block.isTemp ? 'inline' : 'prompt',
-        content: block.content,
-        section:
-          block.type === 'persona'
-            ? 'role'
-            : block.type === 'constraint'
-              ? 'rules'
-              : block.type === 'format'
-                ? 'output'
-                : block.type === 'example'
-                  ? 'examples'
-                  : 'context',
-        position: index,
-        label: block.title,
-      })),
-    });
-    navigateTo(`/compose/${composition.id}`);
-  }, [activeBlocks, activeStack]);
-
   // Compute filtered blocks
   const gridBlocks = useMemo(() => {
-    let filtered = blocks.filter((b) => !b.isTemp);
+    let filtered = [...blocks];
 
     // Filter by active stack
     if (activeStackId !== null) {
@@ -958,11 +878,7 @@ const App: React.FC = () => {
       ></div>
 
       {/* LEFT: MAIN STAGE */}
-      <div
-        className={`flex-1 min-w-0 flex flex-col relative z-10 transition-all duration-300 ease-out ${
-          isMixerOpen && columnCount <= 3 ? 'lg:mr-[420px]' : ''
-        }`}
-      >
+      <div className='flex-1 min-w-0 flex flex-col relative z-10 transition-all duration-300 ease-out'>
         {/* HEADER */}
         <header className='h-14 flex min-w-0 items-center justify-between px-4 sm:px-6 z-20 shrink-0 bg-[var(--app-bg)] backdrop-blur-md sticky top-0 border-b border-[var(--app-border)]'>
           <div className='flex min-w-0 items-center gap-2'>
@@ -980,6 +896,7 @@ const App: React.FC = () => {
             {[1, 2, 3, 4, 5].map((num) => (
               <button
                 key={num}
+                type='button'
                 onClick={() => setColumnCount(num)}
                 className={`w-7 h-7 rounded text-[10px] font-bold transition-all flex items-center justify-center ${
                   columnCount === num
@@ -995,6 +912,17 @@ const App: React.FC = () => {
 
           <div className='flex items-center gap-2 shrink-0'>
             <button
+              type='button'
+              onClick={() => navigateTo('/sessions')}
+              className='inline-flex items-center gap-2 rounded-full border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--app-text-subtle)] transition-colors hover:border-[var(--app-border-strong)] hover:text-[var(--app-text-strong)]'
+              title='Open sessions'
+            >
+              <NotebookPen size={14} />
+              <span className='hidden sm:inline'>Sessions</span>
+            </button>
+
+            <button
+              type='button'
               onClick={() =>
                 setSearchMode((prev) =>
                   prev === 'keyword' ? 'semantic' : 'keyword',
@@ -1012,6 +940,7 @@ const App: React.FC = () => {
 
             {activeStack && (
               <button
+                type='button'
                 onClick={() => setIsStackSettingsOpen(true)}
                 className='p-2 text-[var(--app-text-subtle)] hover:text-[var(--app-text-strong)] hover:bg-[var(--app-surface-3)] rounded-lg transition-all'
                 title='Active stack settings'
@@ -1022,34 +951,12 @@ const App: React.FC = () => {
 
             {/* Settings Button */}
             <button
+              type='button'
               onClick={() => setIsSettingsOpen(true)}
               className='p-2 text-[var(--app-text-subtle)] hover:text-[var(--app-text-strong)] hover:bg-[var(--app-surface-3)] rounded-lg transition-all'
               title='Tag Settings'
             >
               <Settings size={18} />
-            </button>
-
-            <button
-              onClick={() => setIsMixerOpen(!isMixerOpen)}
-              className={`flex items-center gap-3 px-4 py-2 rounded-md border transition-all font-bold text-xs uppercase tracking-wide shrink-0 ${
-                isMixerOpen
-                  ? 'bg-[var(--app-accent)] text-[var(--app-inverse)] border-[var(--app-accent)] hover:bg-[var(--app-text-strong)]'
-                  : 'bg-[var(--app-inverse)] text-[var(--app-text-muted)] border-[var(--app-border)] hover:border-[var(--app-border-strong)] hover:text-[var(--app-text-strong)]'
-              }`}
-            >
-              {isMixerOpen ? (
-                <PanelRightClose size={16} />
-              ) : (
-                <PanelRightOpen size={16} />
-              )}
-              <span className='hidden sm:inline-block'>
-                {isMixerOpen ? 'Close Rack' : 'Open Rack'}
-              </span>
-              {mixerIds.length > 0 && !isMixerOpen && (
-                <span className='ml-1 bg-[var(--app-surface-3)] text-[var(--app-text-strong)] px-1.5 py-0.5 rounded-sm'>
-                  {mixerIds.length}
-                </span>
-              )}
             </button>
           </div>
         </header>
@@ -1081,14 +988,12 @@ const App: React.FC = () => {
           <PromptGrid
             blocks={gridBlocks}
             visibleBlockIds={visibleBlockIds}
-            mixerIds={mixerIds}
             columnCount={columnCount}
             tagColors={tagColorMap}
             stacks={stacks}
             activeStackId={activeStackId}
             semanticReasons={semanticReasonMap}
             onFocus={setFocusedBlockId}
-            onToggleMix={toggleMixerItem}
             onAdd={() => setIsCreating(true)}
           />
         </main>
@@ -1096,6 +1001,7 @@ const App: React.FC = () => {
         {/* FLOATING ACTION BUTTON */}
         <div className='absolute bottom-8 left-6 z-30'>
           <button
+            type='button'
             onClick={() => setIsCreating(true)}
             className='flex items-center gap-3 px-6 py-3 bg-[var(--app-accent)] hover:bg-[var(--app-text-strong)] text-[var(--app-inverse)] rounded-full shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:scale-105 active:scale-95 transition-all group border border-[var(--app-accent)]'
           >
@@ -1124,6 +1030,7 @@ const App: React.FC = () => {
                 <Loader2 size={12} className='animate-spin text-[var(--app-text-subtle)]' />
               )}
               <button
+                type='button'
                 onClick={() => setSearchQuery('')}
                 className='ml-1 p-0.5 bg-[var(--app-surface-3)] hover:bg-[var(--app-surface-2)] rounded-full text-[var(--app-text-subtle)] hover:text-[var(--app-text-strong)] transition-colors'
               >
@@ -1133,24 +1040,6 @@ const App: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* RIGHT: MIXER SIDEBAR */}
-      <Mixer
-        isOpen={isMixerOpen}
-        onClose={() => setIsMixerOpen(false)}
-        blocks={activeBlocks}
-        setMixerIds={setMixerIds}
-        onReorder={handleMixerReorder}
-        onTriggerToast={addToast}
-        onCreateTemp={handleAddTempBlock}
-        onUpdateBlock={updateBlock}
-        onDeleteBlock={removeBlock}
-        isOverlay={isNarrowViewport}
-        stacks={stacks}
-        tagColors={tagColorMap}
-        onMoveToStack={(stackId) => handleMoveToStack(mixerIds, stackId)}
-        onCompose={handleCreateCompositionFromRack}
-      />
 
       {/* OVERLAYS */}
       <QuickCreator

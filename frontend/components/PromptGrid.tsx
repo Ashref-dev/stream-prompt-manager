@@ -6,28 +6,24 @@ import { Clipboard } from 'lucide-react';
 interface PromptGridProps {
   blocks: PromptBlockData[];
   visibleBlockIds: Set<string>;
-  mixerIds: string[];
   columnCount: number;
   tagColors: Map<string, TagColor>;
   stacks: Stack[];
   activeStackId: string | null;
   semanticReasons?: Map<string, string>;
   onFocus: (id: string) => void;
-  onToggleMix: (id: string) => void;
   onAdd: () => void;
 }
 
 const PromptGrid: React.FC<PromptGridProps> = ({
   blocks,
   visibleBlockIds,
-  mixerIds,
   columnCount,
   tagColors,
   stacks,
   activeStackId,
   semanticReasons,
   onFocus,
-  onToggleMix,
   onAdd,
 }) => {
   // Create a map for stack id -> name lookup
@@ -54,6 +50,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
           ) or click below.
         </p>
         <button
+          type='button'
           onClick={onAdd}
           className='text-sm font-bold text-[var(--app-text-muted)] border-b border-[var(--app-border-strong)] hover:border-[var(--app-border-strong)] hover:text-[var(--app-text)] transition-colors pb-0.5'
         >
@@ -92,13 +89,11 @@ const PromptGrid: React.FC<PromptGridProps> = ({
           key={block.id}
           block={block}
           isVisible={visibleBlockIds.has(block.id)}
-          isMixing={mixerIds.includes(block.id)}
           tagColors={tagColors}
           stackName={block.stackId ? stackMap.get(block.stackId) : undefined}
           showStackOrder={activeStackId !== null}
           semanticReason={semanticReasons?.get(block.id)}
           onClick={() => onFocus(block.id)}
-          onToggleMix={() => onToggleMix(block.id)}
         />
       ))}
     </div>

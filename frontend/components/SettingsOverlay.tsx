@@ -72,6 +72,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
   }, [allTags, selectedTag]);
 
   React.useEffect(() => {
+    void selectedTag;
     setColorConflict(null);
   }, [selectedTag]);
 
@@ -87,7 +88,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
 
   if (!isOpen) return null;
 
-  const colorMap = new Map(tagColors.map((tc) => [tc.name, tc]));
+  const colorMap = new Map<string, TagColor>(tagColors.map((tc) => [tc.name, tc]));
   const usedColorKeys = new Set(
     tagColors
       .filter((tc) => tc.name !== selectedTag)
@@ -132,10 +133,12 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
 
   return (
     <div className='fixed inset-0 z-[70] flex items-center justify-center p-4'>
-      <div
+      <button
+        type='button'
         ref={backdropRef}
         className='absolute inset-0 bg-black/80 backdrop-blur-sm'
         onClick={handleClose}
+        aria-label='Close tag settings overlay'
       />
 
       <div
@@ -158,6 +161,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
             </div>
           </div>
           <button
+            type='button'
             onClick={handleClose}
             className='p-2 text-[var(--app-inverse)] bg-[var(--app-accent)] hover:bg-[var(--app-text-strong)] rounded-lg transition-all hover:scale-105'
           >
@@ -184,6 +188,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
                 return (
                   <button
                     key={tag}
+                    type='button'
                     onClick={() => setSelectedTag(tag)}
                     className={`
                                     flex items-center gap-3 p-3 rounded-xl border transition-all relative group
@@ -239,6 +244,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
                   </span>
                   <div className='mt-2 grid grid-cols-2 gap-2'>
                     <button
+                      type='button'
                       onClick={() => onUpdateThemeMode('dark')}
                       className={`py-1.5 text-[9px] font-bold uppercase tracking-wider border rounded-md transition-all ${
                         themeMode === 'dark'
@@ -249,6 +255,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
                       Dark
                     </button>
                     <button
+                      type='button'
                       onClick={() => onUpdateThemeMode('light')}
                       className={`py-1.5 text-[9px] font-bold uppercase tracking-wider border rounded-md transition-all ${
                         themeMode === 'light'
@@ -266,6 +273,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
                     Auto Tagging
                   </span>
                   <button
+                    type='button'
                     onClick={() => onToggleAutoTagging(!isAutoTaggingEnabled)}
                     className={`mt-2 w-full py-1.5 text-[9px] font-bold uppercase tracking-wider border rounded-md transition-all ${
                       isAutoTaggingEnabled
@@ -284,6 +292,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
                 </span>
                 <div className='mt-2 grid grid-cols-2 gap-2'>
                   <button
+                    type='button'
                     onClick={() => onUpdateRadiusMode('rounded')}
                     className={`py-1.5 text-[9px] font-bold uppercase tracking-wider border rounded-md transition-all ${
                       radiusMode === 'rounded'
@@ -294,6 +303,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
                     Rounded
                   </button>
                   <button
+                    type='button'
                     onClick={() => onUpdateRadiusMode('sharp')}
                     className={`py-1.5 text-[9px] font-bold uppercase tracking-wider border rounded-md transition-all ${
                       radiusMode === 'sharp'
@@ -353,6 +363,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
                         return (
                           <button
                             key={key}
+                            type='button'
                             onClick={() =>
                               applyColor(preset.hue, preset.lightness)
                             }
@@ -472,6 +483,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
 
                     {getTagColor(selectedTag) !== null && (
                       <button
+                        type='button'
                         onClick={() => {
                           setColorConflict(null);
                           onResetTagColor(selectedTag);
@@ -504,6 +516,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
             {allTags.length} Unique Tags Detected
           </span>
           <button
+            type='button'
             onClick={handleClose}
             className='px-8 py-2.5 bg-[var(--app-accent)] text-[var(--app-inverse)] rounded-lg text-sm font-bold hover:bg-[var(--app-text-strong)] transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] active:scale-95'
           >
