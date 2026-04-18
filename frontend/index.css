@@ -1,7 +1,6 @@
 /* Shared utility classes referenced by components */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: var(--app-border-strong) transparent;
   scrollbar-color: color-mix(in srgb, var(--app-border-strong) 90%, transparent)
     transparent;
 }
@@ -16,7 +15,6 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--app-border-strong);
   background: color-mix(
     in srgb,
     var(--app-border-strong) 85%,
@@ -26,7 +24,6 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--app-text-subtle);
   background: color-mix(
     in srgb,
     var(--app-border-strong) 65%,
@@ -48,4 +45,29 @@
 .mask-gradient {
   -webkit-mask-image: linear-gradient(to right, transparent 0, black 20px, black calc(100% - 20px), transparent 100%);
   mask-image: linear-gradient(to right, transparent 0, black 20px, black calc(100% - 20px), transparent 100%);
+}
+
+.session-attachment-actions {
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.group:hover .session-attachment-actions,
+.group:focus-within .session-attachment-actions {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (pointer: coarse) {
+  .session-attachment-actions {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .session-attachment-actions {
+    transition: none;
+  }
 }

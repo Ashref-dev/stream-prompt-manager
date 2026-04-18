@@ -15,17 +15,17 @@ const EmptyState: React.FC<EmptyStateProps> = ({
   action,
 }) => {
   return (
-    <div className='rounded-[28px] border border-[var(--app-border)] bg-[var(--app-surface-2)] px-6 py-10 text-center shadow-[0_24px_80px_rgba(0,0,0,0.22)] sm:px-10 sm:py-14'>
-      <div className='mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-3)] text-[var(--app-text-subtle)]'>
-        <Icon size={22} />
+    <div className='rounded-[28px] border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface-2)_82%,transparent)] px-6 py-9 text-center shadow-[0_14px_38px_rgba(0,0,0,0.1)] backdrop-blur-sm sm:px-10 sm:py-12'>
+      <div className='mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--app-accent)_12%,transparent)] text-[var(--app-accent)]'>
+        <Icon size={20} />
       </div>
-      <h2 className='mt-5 text-2xl font-brand font-semibold tracking-tight text-[var(--app-text-strong)]'>
+      <h2 className='mt-4 text-xl font-semibold tracking-tight text-[var(--app-text-strong)]'>
         {title}
       </h2>
-      <p className='mx-auto mt-3 max-w-xl text-sm leading-6 text-[var(--app-text-muted)]'>
+      <p className='mx-auto mt-2 max-w-xl text-sm leading-6 text-[var(--app-text-muted)]'>
         {description}
       </p>
-      {action ? <div className='mt-6'>{action}</div> : null}
+      {action ? <div className='mt-5'>{action}</div> : null}
     </div>
   );
 };

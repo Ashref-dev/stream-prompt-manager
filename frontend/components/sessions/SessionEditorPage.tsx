@@ -29,6 +29,9 @@ interface ToastState {
   message: string;
 }
 
+const COLLAPSED_STRIP_HEIGHT = 64;
+const EXPANDED_STRIP_HEIGHT = 244;
+
 const getDerivedTitle = (title: string, body: string) => {
   const normalizedTitle = title.trim();
   if (normalizedTitle) return normalizedTitle;
@@ -63,11 +66,20 @@ const SessionEditorPage: React.FC<SessionEditorPageProps> = ({ sessionId }) => {
   const [bodyCopied, setBodyCopied] = React.useState(false);
   const [confirmDelete, setConfirmDelete] = React.useState(false);
   const [isAddingImages, setIsAddingImages] = React.useState(false);
+  const [attachmentsExpanded, setAttachmentsExpanded] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const titleTimeoutRef = React.useRef<number | null>(null);
   const bodyTimeoutRef = React.useRef<number | null>(null);
   const dragDepthRef = React.useRef(0);
+
+  React.useEffect(() => {
+    if (attachments.length > 0) {
+      setAttachmentsExpanded(true);
+    }
+  }, [attachments.length]);
+
+  const editorBottomPadding = attachmentsExpanded ? EXPANDED_STRIP_HEIGHT : COLLAPSED_STRIP_HEIGHT;
 
   const pushToast = React.useCallback((message: string) => {
     setToast({ id: Date.now(), message });
@@ -91,6 +103,18 @@ const SessionEditorPage: React.FC<SessionEditorPageProps> = ({ sessionId }) => {
     textareaRef.current.style.height = '0px';
     textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
   }, [body]);
+
+  React.useEffect(() => {
+    if (attachments.length > 0) {
+      setAttachmentsExpanded(true);
+    }
+  }, [attachments.length]);
+
+  React.useEffect(() => {
+    if (isDraggingFiles) {
+      setAttachmentsExpanded(true);
+    }
+  }, [isDraggingFiles]);
 
   const commitUpdate = React.useCallback(
     async (patch: { title?: string; body?: string }) => {
@@ -316,7 +340,7 @@ const SessionEditorPage: React.FC<SessionEditorPageProps> = ({ sessionId }) => {
                 <button
                   type='button'
                   onClick={() => navigateTo('/sessions')}
-                  className='inline-flex items-center gap-2 rounded-full border border-[var(--app-border)] px-5 py-3 text-xs font-bold uppercase tracking-[0.2em] text-[var(--app-text-subtle)] transition-colors hover:border-[var(--app-border-strong)] hover:text-[var(--app-text-strong)]'
+                  className='inline-flex items-center gap-2 rounded-full border border-[var(--app-border)] px-5 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--app-text-subtle)] transition-colors hover:border-[var(--app-border-strong)] hover:text-[var(--app-text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-accent)] motion-reduce:transition-none'
                 >
                   <ArrowLeft size={14} />
                   Back to sessions
@@ -324,7 +348,7 @@ const SessionEditorPage: React.FC<SessionEditorPageProps> = ({ sessionId }) => {
                 <button
                   type='button'
                   onClick={() => void refresh()}
-                  className='inline-flex items-center gap-2 rounded-full bg-[var(--app-accent)] px-5 py-3 text-xs font-bold uppercase tracking-[0.2em] text-[var(--app-inverse)] transition-colors hover:bg-[var(--app-text-strong)]'
+                  className='inline-flex items-center gap-2 rounded-full bg-[var(--app-accent)] px-5 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--app-inverse)] transition-colors hover:bg-[var(--app-text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-accent)] motion-reduce:transition-none'
                 >
                   <RefreshCcw size={14} />
                   Retry
@@ -358,7 +382,7 @@ const SessionEditorPage: React.FC<SessionEditorPageProps> = ({ sessionId }) => {
                 <button
                   type='button'
                   onClick={() => navigateTo('/sessions')}
-                  className='inline-flex items-center gap-2 rounded-full border border-[var(--app-border)] px-5 py-3 text-xs font-bold uppercase tracking-[0.2em] text-[var(--app-text-subtle)] transition-colors hover:border-[var(--app-border-strong)] hover:text-[var(--app-text-strong)]'
+                  className='inline-flex items-center gap-2 rounded-full border border-[var(--app-border)] px-5 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--app-text-subtle)] transition-colors hover:border-[var(--app-border-strong)] hover:text-[var(--app-text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-accent)] motion-reduce:transition-none'
                 >
                   <ArrowLeft size={14} />
                   Back to sessions
@@ -366,7 +390,7 @@ const SessionEditorPage: React.FC<SessionEditorPageProps> = ({ sessionId }) => {
                 <button
                   type='button'
                   onClick={() => navigateTo('/sessions')}
-                  className='inline-flex items-center gap-2 rounded-full bg-[var(--app-accent)] px-5 py-3 text-xs font-bold uppercase tracking-[0.2em] text-[var(--app-inverse)] transition-colors hover:bg-[var(--app-text-strong)]'
+                  className='inline-flex items-center gap-2 rounded-full bg-[var(--app-accent)] px-5 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--app-inverse)] transition-colors hover:bg-[var(--app-text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-accent)] motion-reduce:transition-none'
                 >
                   <Plus size={14} />
                   Open list
@@ -383,15 +407,15 @@ const SessionEditorPage: React.FC<SessionEditorPageProps> = ({ sessionId }) => {
     <div className='min-h-screen bg-[var(--app-bg)] text-[var(--app-text)]'>
       <DropZone active={isDraggingFiles} />
 
-      <div className='mx-auto max-w-7xl px-4 pb-24 pt-4 sm:px-6 lg:px-8'>
-        <header className='sticky top-4 z-30 rounded-[28px] border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-bg)_82%,transparent)] px-4 py-4 backdrop-blur-md shadow-[0_18px_48px_rgba(0,0,0,0.16)] sm:px-6'>
-          <div className='flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between'>
+      <div className='mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8'>
+        <header className='sticky top-4 z-30 rounded-[28px] border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-bg)_82%,transparent)] px-4 py-4 backdrop-blur-md shadow-[0_14px_40px_rgba(0,0,0,0.12)] sm:px-6'>
+          <div className='flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between'>
             <div className='min-w-0'>
               <div className='flex items-center gap-3'>
                 <button
                   type='button'
                   onClick={() => navigateTo('/sessions')}
-                  className='inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--app-border)] bg-[var(--app-surface-2)] px-4 text-xs font-bold uppercase tracking-[0.2em] text-[var(--app-text-subtle)] transition-colors hover:border-[var(--app-border-strong)] hover:text-[var(--app-text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-accent)]'
+                  className='inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface-2)_78%,transparent)] px-4 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--app-text-subtle)] transition-colors hover:border-[var(--app-border-strong)] hover:text-[var(--app-text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-accent)] motion-reduce:transition-none'
                 >
                   <ArrowLeft size={14} />
                   Sessions
@@ -399,14 +423,14 @@ const SessionEditorPage: React.FC<SessionEditorPageProps> = ({ sessionId }) => {
                 <button
                   type='button'
                   onClick={() => navigateTo('/')}
-                  className='hidden h-11 items-center justify-center rounded-full border border-[var(--app-border)] bg-[var(--app-surface-2)] px-4 text-xs font-bold uppercase tracking-[0.2em] text-[var(--app-text-subtle)] transition-colors hover:border-[var(--app-border-strong)] hover:text-[var(--app-text-strong)] sm:inline-flex focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-accent)]'
+                  className='hidden h-11 items-center justify-center rounded-full border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface-2)_78%,transparent)] px-4 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--app-text-subtle)] transition-colors hover:border-[var(--app-border-strong)] hover:text-[var(--app-text-strong)] sm:inline-flex focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-accent)] motion-reduce:transition-none'
                 >
                   Back to app
                 </button>
               </div>
 
               <div className='mt-4'>
-                <p className='text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--app-text-subtle)]'>
+                <p className='text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--app-text-subtle)]'>
                   Session draft
                 </p>
                 <input
@@ -418,9 +442,9 @@ const SessionEditorPage: React.FC<SessionEditorPageProps> = ({ sessionId }) => {
                   }}
                   onBlur={handleTitleBlur}
                   placeholder='Untitled session'
-                  className='mt-2 w-full bg-transparent text-3xl font-brand font-semibold tracking-tight text-[var(--app-text-strong)] outline-none placeholder:text-[var(--app-text-subtle)] sm:text-4xl'
+                  className='mt-2 w-full bg-transparent text-3xl font-semibold tracking-tight text-[var(--app-text-strong)] outline-none placeholder:text-[var(--app-text-subtle)] sm:text-4xl'
                 />
-                <div className='mt-3 flex items-center gap-2 text-xs text-[var(--app-text-subtle)]'>
+                <div className='mt-2.5 flex items-center gap-2 text-xs text-[var(--app-text-subtle)]'>
                   {saveState === 'saving' ? <Loader2 size={14} className='animate-spin' /> : saveState === 'saved' ? <Check size={14} /> : null}
                   <span>
                     {saveState === 'saving'
@@ -435,11 +459,11 @@ const SessionEditorPage: React.FC<SessionEditorPageProps> = ({ sessionId }) => {
               </div>
             </div>
 
-            <div className='flex flex-wrap items-center gap-3'>
+            <div className='flex flex-wrap items-center gap-2.5'>
               <button
                 type='button'
                 onClick={copyBody}
-                className='inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--app-border)] bg-[var(--app-surface-2)] px-4 text-xs font-bold uppercase tracking-[0.2em] text-[var(--app-text-subtle)] transition-colors hover:border-[var(--app-border-strong)] hover:text-[var(--app-text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-accent)]'
+                className='inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface-2)_78%,transparent)] px-4 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--app-text-subtle)] transition-colors hover:border-[var(--app-border-strong)] hover:text-[var(--app-text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-accent)] motion-reduce:transition-none'
               >
                 {bodyCopied ? <Check size={14} /> : <ClipboardCopy size={14} />}
                 Copy body
@@ -447,7 +471,7 @@ const SessionEditorPage: React.FC<SessionEditorPageProps> = ({ sessionId }) => {
               <button
                 type='button'
                 onClick={() => fileInputRef.current?.click()}
-                className='inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--app-border)] bg-[var(--app-surface-2)] px-4 text-xs font-bold uppercase tracking-[0.2em] text-[var(--app-text-subtle)] transition-colors hover:border-[var(--app-border-strong)] hover:text-[var(--app-text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-accent)]'
+                className='inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface-2)_78%,transparent)] px-4 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--app-text-subtle)] transition-colors hover:border-[var(--app-border-strong)] hover:text-[var(--app-text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-accent)] motion-reduce:transition-none'
               >
                 {isAddingImages ? <Loader2 size={14} className='animate-spin' /> : <ImagePlus size={14} />}
                 Add image
@@ -455,7 +479,7 @@ const SessionEditorPage: React.FC<SessionEditorPageProps> = ({ sessionId }) => {
               <button
                 type='button'
                 onClick={() => setIsPromptPickerOpen(true)}
-                className='inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--app-border)] bg-[var(--app-surface-2)] px-4 text-xs font-bold uppercase tracking-[0.2em] text-[var(--app-text-subtle)] transition-colors hover:border-[var(--app-border-strong)] hover:text-[var(--app-text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-accent)]'
+                className='inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface-2)_78%,transparent)] px-4 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--app-text-subtle)] transition-colors hover:border-[var(--app-border-strong)] hover:text-[var(--app-text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-accent)] motion-reduce:transition-none'
               >
                 <NotebookPen size={14} />
                 Insert prompt
@@ -467,7 +491,7 @@ const SessionEditorPage: React.FC<SessionEditorPageProps> = ({ sessionId }) => {
                   <button
                     type='button'
                     onClick={() => void handleDeleteSession()}
-                    className='inline-flex h-11 items-center justify-center gap-2 rounded-full border border-red-500/60 px-4 text-xs font-bold uppercase tracking-[0.2em] text-red-400 transition-colors hover:bg-red-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400'
+                    className='inline-flex h-11 items-center justify-center gap-2 rounded-full border border-red-500/60 px-4 text-xs font-semibold uppercase tracking-[0.18em] text-red-400 transition-colors hover:bg-red-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 motion-reduce:transition-none'
                   >
                     <Trash2 size={14} />
                     Delete
@@ -475,7 +499,7 @@ const SessionEditorPage: React.FC<SessionEditorPageProps> = ({ sessionId }) => {
                   <button
                     type='button'
                     onClick={() => setConfirmDelete(false)}
-                    className='inline-flex h-11 items-center justify-center rounded-full border border-[var(--app-border)] px-4 text-xs font-bold uppercase tracking-[0.2em] text-[var(--app-text-subtle)] transition-colors hover:border-[var(--app-border-strong)] hover:text-[var(--app-text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-accent)]'
+                    className='inline-flex h-11 items-center justify-center rounded-full border border-[var(--app-border)] px-4 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--app-text-subtle)] transition-colors hover:border-[var(--app-border-strong)] hover:text-[var(--app-text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-accent)] motion-reduce:transition-none'
                   >
                     Cancel
                   </button>
@@ -484,7 +508,7 @@ const SessionEditorPage: React.FC<SessionEditorPageProps> = ({ sessionId }) => {
                 <button
                   type='button'
                   onClick={() => setConfirmDelete(true)}
-                  className='inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--app-border)] px-4 text-xs font-bold uppercase tracking-[0.2em] text-[var(--app-text-subtle)] transition-colors hover:border-red-500/60 hover:text-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400'
+                  className='inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--app-border)] px-4 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--app-text-subtle)] transition-colors hover:border-red-500/60 hover:text-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 motion-reduce:transition-none'
                 >
                   <Trash2 size={14} />
                   Delete session
@@ -507,13 +531,13 @@ const SessionEditorPage: React.FC<SessionEditorPageProps> = ({ sessionId }) => {
           }}
         />
 
-        <main className='grid gap-6 pt-8 lg:grid-cols-[minmax(0,1fr),360px]'>
-          <section className='rounded-[28px] border border-[var(--app-border)] bg-[var(--app-surface)] shadow-[0_24px_80px_rgba(0,0,0,0.22)]'>
-            <div className='border-b border-[var(--app-border)] px-5 py-4 sm:px-6'>
-              <p className='text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--app-text-subtle)]'>
+        <main className='pt-7' style={{ paddingBottom: `${editorBottomPadding}px` }}>
+          <section className='rounded-[28px] border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface)_86%,transparent)] shadow-[0_18px_56px_rgba(0,0,0,0.12)] backdrop-blur-sm'>
+            <div className='border-b border-[color-mix(in_srgb,var(--app-border)_72%,transparent)] px-5 py-4 sm:px-6'>
+              <p className='text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--app-text-subtle)]'>
                 Body
               </p>
-              <h2 className='mt-2 text-lg font-semibold tracking-tight text-[var(--app-text-strong)]'>
+              <h2 className='mt-2 text-base font-semibold tracking-tight text-[var(--app-text-strong)] sm:text-lg'>
                 Draft plan, notes, or instructions
               </h2>
             </div>
@@ -528,44 +552,28 @@ const SessionEditorPage: React.FC<SessionEditorPageProps> = ({ sessionId }) => {
                 }}
                 placeholder='Write the session body here. Paste plain text normally, then drop screenshots anywhere on the page.'
                 spellCheck={false}
-                className='custom-scrollbar min-h-[50vh] w-full resize-none overflow-hidden bg-transparent text-base leading-7 text-[var(--app-text)] outline-none placeholder:text-[var(--app-text-subtle)] sm:text-[15px]'
+                className='custom-scrollbar min-h-[56vh] w-full resize-none overflow-hidden bg-transparent text-[15px] leading-7 text-[var(--app-text)] outline-none placeholder:text-[var(--app-text-subtle)] sm:text-base'
               />
             </div>
           </section>
-
-          <AttachmentsPanel
-            attachments={attachments}
-            onAddClick={() => fileInputRef.current?.click()}
-            onCopy={copyAttachment}
-            onDownload={downloadAttachment}
-            onRemove={(attachmentId) => void handleRemoveAttachment(attachmentId)}
-            copyingAttachmentId={copyingAttachmentId}
-          />
         </main>
       </div>
 
-      <div className='fixed inset-x-4 bottom-4 z-40 flex gap-3 rounded-[24px] border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface)_90%,transparent)] p-3 shadow-[0_20px_50px_rgba(0,0,0,0.3)] backdrop-blur-md sm:hidden'>
-        <button
-          type='button'
-          onClick={copyBody}
-          className='inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-full border border-[var(--app-border)] bg-[var(--app-surface-2)] text-xs font-bold uppercase tracking-[0.2em] text-[var(--app-text-subtle)]'
-        >
-          {bodyCopied ? <Check size={14} /> : <ClipboardCopy size={14} />}
-          Copy body
-        </button>
-        <button
-          type='button'
-          onClick={() => fileInputRef.current?.click()}
-          className='inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-[var(--app-accent)] text-xs font-bold uppercase tracking-[0.2em] text-[var(--app-inverse)]'
-        >
-          <ImagePlus size={14} />
-          Add image
-        </button>
-      </div>
+      <AttachmentsPanel
+        attachments={attachments}
+        onAddClick={() => fileInputRef.current?.click()}
+        onCopy={copyAttachment}
+        onDownload={downloadAttachment}
+        onRemove={(attachmentId) => void handleRemoveAttachment(attachmentId)}
+        copyingAttachmentId={copyingAttachmentId}
+        dragActive={isDraggingFiles}
+        expanded={attachmentsExpanded}
+        onExpandedChange={setAttachmentsExpanded}
+      />
 
       {toast ? (
-        <div className='pointer-events-none fixed bottom-24 left-1/2 z-[100] -translate-x-1/2'>
-          <div className='rounded-full border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface)_92%,transparent)] px-4 py-2 text-sm text-[var(--app-text)] shadow-[0_16px_40px_rgba(0,0,0,0.28)] backdrop-blur-md'>
+        <div className='pointer-events-none fixed bottom-[calc(56px+1.25rem)] left-1/2 z-[100] -translate-x-1/2 sm:bottom-[calc(56px+1.5rem)]'>
+          <div className='rounded-full border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface)_92%,transparent)] px-4 py-2 text-sm text-[var(--app-text)] shadow-[0_16px_40px_rgba(0,0,0,0.22)] backdrop-blur-md'>
             {toast.message}
           </div>
         </div>

@@ -32,6 +32,18 @@ const SessionsListPage: React.FC = () => {
     };
   }, [sessions]);
 
+  const handleCreateSession = React.useCallback(async () => {
+    if (creating) return;
+    setCreating(true);
+
+    try {
+      const session = await createSession();
+      navigateTo(`/sessions/${session.id}`);
+    } finally {
+      setCreating(false);
+    }
+  }, [creating]);
+
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
@@ -47,19 +59,7 @@ const SessionsListPage: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  });
-
-  const handleCreateSession = React.useCallback(async () => {
-    if (creating) return;
-    setCreating(true);
-
-    try {
-      const session = await createSession();
-      navigateTo(`/sessions/${session.id}`);
-    } finally {
-      setCreating(false);
-    }
-  }, [creating]);
+  }, [handleCreateSession]);
 
   const handleDeleteSession = React.useCallback(async (sessionId: string) => {
     setDeletingId(sessionId);
@@ -83,24 +83,24 @@ const SessionsListPage: React.FC = () => {
   return (
     <div className='min-h-screen bg-[var(--app-bg)] text-[var(--app-text)]'>
       <div className='mx-auto max-w-7xl px-4 pb-16 pt-4 sm:px-6 lg:px-8'>
-        <header className='sticky top-4 z-20 rounded-[28px] border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-bg)_82%,transparent)] px-4 py-4 backdrop-blur-md shadow-[0_18px_48px_rgba(0,0,0,0.16)] sm:px-6'>
-          <div className='flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between'>
+        <header className='sticky top-4 z-20 rounded-[28px] border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-bg)_82%,transparent)] px-4 py-4 backdrop-blur-md shadow-[0_14px_40px_rgba(0,0,0,0.12)] sm:px-6'>
+          <div className='flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between'>
             <div className='flex items-center gap-3'>
-              <div className='flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-2)] text-[var(--app-text-strong)]'>
+              <div className='flex h-11 w-11 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--app-accent)_14%,transparent)] text-[var(--app-accent)]'>
                 <NotebookPen size={18} />
               </div>
               <div>
-                <p className='text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--app-text-subtle)]'>
+                <p className='text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--app-text-subtle)]'>
                   Local workspace
                 </p>
-                <h1 className='mt-1 text-2xl font-brand font-semibold tracking-tight text-[var(--app-text-strong)]'>
+                <h1 className='mt-1 text-2xl font-semibold tracking-tight text-[var(--app-text-strong)]'>
                   Sessions
                 </h1>
               </div>
             </div>
 
             <div className='flex flex-col gap-3 sm:flex-row sm:items-center'>
-              <label className='flex h-11 items-center gap-3 rounded-full border border-[var(--app-border)] bg-[var(--app-surface-2)] px-4'>
+              <label className='flex h-11 items-center gap-3 rounded-full border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface-2)_78%,transparent)] px-4'>
                 <Search size={16} className='text-[var(--app-text-subtle)]' />
                 <input
                   ref={searchRef}
@@ -114,7 +114,7 @@ const SessionsListPage: React.FC = () => {
               <button
                 type='button'
                 onClick={() => navigateTo('/')}
-                className='inline-flex h-11 items-center justify-center rounded-full border border-[var(--app-border)] bg-[var(--app-surface-2)] px-4 text-xs font-bold uppercase tracking-[0.2em] text-[var(--app-text-subtle)] transition-colors hover:border-[var(--app-border-strong)] hover:text-[var(--app-text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-accent)]'
+                className='inline-flex h-11 items-center justify-center rounded-full border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface-2)_78%,transparent)] px-4 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--app-text-subtle)] transition-colors hover:border-[var(--app-border-strong)] hover:text-[var(--app-text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-accent)] motion-reduce:transition-none'
               >
                 Back to app
               </button>
@@ -122,7 +122,7 @@ const SessionsListPage: React.FC = () => {
               <button
                 type='button'
                 onClick={() => void handleCreateSession()}
-                className='inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[var(--app-accent)] px-5 text-xs font-bold uppercase tracking-[0.2em] text-[var(--app-inverse)] transition-colors hover:bg-[var(--app-text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-accent)]'
+                className='inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[var(--app-accent)] px-5 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--app-inverse)] transition-colors hover:bg-[var(--app-text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-accent)] motion-reduce:transition-none'
               >
                 {creating ? <Loader2 size={14} className='animate-spin' /> : <Plus size={14} />}
                 New session
@@ -141,7 +141,7 @@ const SessionsListPage: React.FC = () => {
                 <button
                   type='button'
                   onClick={() => void refresh()}
-                  className='inline-flex items-center gap-2 rounded-full bg-[var(--app-accent)] px-5 py-3 text-xs font-bold uppercase tracking-[0.2em] text-[var(--app-inverse)] transition-colors hover:bg-[var(--app-text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-accent)]'
+                  className='inline-flex items-center gap-2 rounded-full bg-[var(--app-accent)] px-5 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--app-inverse)] transition-colors hover:bg-[var(--app-text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-accent)] motion-reduce:transition-none'
                 >
                   <RefreshCcw size={14} />
                   Retry
@@ -165,7 +165,7 @@ const SessionsListPage: React.FC = () => {
                 <button
                   type='button'
                   onClick={() => void handleCreateSession()}
-                  className='inline-flex items-center gap-2 rounded-full bg-[var(--app-accent)] px-5 py-3 text-xs font-bold uppercase tracking-[0.2em] text-[var(--app-inverse)] transition-colors hover:bg-[var(--app-text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-accent)]'
+                  className='inline-flex items-center gap-2 rounded-full bg-[var(--app-accent)] px-5 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--app-inverse)] transition-colors hover:bg-[var(--app-text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-accent)] motion-reduce:transition-none'
                 >
                   <Plus size={14} />
                   New session
@@ -173,7 +173,7 @@ const SessionsListPage: React.FC = () => {
               }
             />
           ) : (
-            <div className='grid gap-5 lg:grid-cols-2 xl:grid-cols-3'>
+            <div className='grid gap-4 lg:grid-cols-2 xl:grid-cols-3'>
               {filteredSessions.map((session) => (
                 <div
                   key={session.id}
